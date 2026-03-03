@@ -1,0 +1,459 @@
+---
+title: Toy Manifest Reference
+description: Structure and metadata fields in toys.json for registering toys in the Stims library
+---
+
+## Overview
+
+The toy manifest (`assets/data/toys.json`) is the **authoritative source** for all toy metadata in the Stims library. This JSON file defines which toys exist, how they're displayed, and their runtime requirements.
+
+## Manifest Structure
+
+The manifest is a JSON array of toy objects:
+
+```json toys.json
+[
+  {
+    "slug": "pocket-pulse",
+    "title": "Pocket Pulse",
+    "description": "A mobile-optimized pulse field that responds to audio and touch gestures.",
+    "module": "assets/js/toys/pocket-pulse.ts",
+    "type": "module",
+    "requiresWebGPU": true,
+    "lifecycleStage": "prototype",
+    "moods": ["uplifting", "focus", "minimal"],
+    "tags": ["mobile", "pulses", "touch"],
+    "controls": ["Quality presets", "Touch drift"],
+    "capabilities": {
+      "microphone": true,
+      "demoAudio": true,
+      "motion": false
+    },
+    "allowWebGLFallback": true
+  }
+]
+```
+
+## Required Fields
+
+<ParamField path="slug" type="string" required>
+  Unique kebab-case identifier for the toy.
+  
+  Used in URLs (`toy.html?toy=<slug>`) and as a programmatic key.
+  
+  **Must be unique** across all toys in the manifest.
+  
+  **Example:** `"pocket-pulse"`, `"spiral-burst"`, `"aurora-painter"`
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Human-readable display name for the toy.
+  
+  Shown in the toy library grid and selection UI.
+  
+  **Example:** `"Pocket Pulse"`, `"Spiral Burst"`, `"Aurora Painter"`
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Brief description of what the toy does.
+  
+  Displayed in the toy card and detail views. Keep to 1-2 sentences.
+  
+  **Example:** `"A mobile-optimized pulse field that responds to audio and touch gestures."`
+</ParamField>
+
+<ParamField path="module" type="string" required>
+  Path to the toy's TypeScript module relative to project root.
+  
+  Must export a `start` function matching `ToyStartFunction`.
+  
+  **Pattern:** `"assets/js/toys/<slug>.ts"`
+  
+  **Example:** `"assets/js/toys/pocket-pulse.ts"`
+</ParamField>
+
+<ParamField path="type" type="'module' | 'page'" required>
+  Toy loading strategy.
+  
+  - `"module"`: Loaded dynamically via JavaScript import
+  - `"page"`: Loaded via iframe or dedicated HTML page
+  
+  **Most toys use `"module"`.**
+</ParamField>
+
+## Lifecycle Fields
+
+<ParamField path="lifecycleStage" type="'prototype' | 'featured' | 'archived'" default="'archived'">
+  Current lifecycle stage of the toy.
+  
+  - **`prototype`**: Experimental, fast iteration expected
+  - **`featured`**: Curated, polished, high priority (5-8 toys max)
+  - **`archived`**: Stable but not actively promoted
+  
+  Drives default sorting and visibility in the library.
+</ParamField>
+
+<ParamField path="featuredRank" type="number">
+  Sort order for featured toys (lower = higher priority).
+  
+  Required when `lifecycleStage` is `"featured"`.
+  
+  **Example:** `1` (highest priority), `7` (lowest featured priority)
+</ParamField>
+
+## Capability Fields
+
+<ParamField path="capabilities" type="object">
+  Audio and input capabilities the toy supports.
+  
+  ```json
+  {
+    "microphone": true,
+    "demoAudio": true,
+    "motion": false
+  }
+  ```
+  
+  <Expandable title="Capability properties">
+    - **`microphone`**: Supports live microphone input
+    - **`demoAudio`**: Can use synthetic demo audio as fallback
+    - **`motion`**: Responds to device motion (accelerometer, gyroscope)
+  </Expandable>
+</ParamField>
+
+<ParamField path="requiresWebGPU" type="boolean" default="false">
+  Whether the toy requires WebGPU to run.
+  
+  If `true`, toy will only load in WebGPU-capable browsers.
+</ParamField>
+
+<ParamField path="allowWebGLFallback" type="boolean" default="false">
+  Whether the toy can fall back to WebGL if WebGPU is unavailable.
+  
+  Only meaningful when `requiresWebGPU` is `true`.
+</ParamField>
+
+## Discovery Fields
+
+<ParamField path="moods" type="string[]">
+  Mood tags for filtering and discovery.
+  
+  **Common values:** `"energetic"`, `"calming"`, `"dreamy"`, `"cosmic"`, `"immersive"`, `"playful"`, `"serene"`, `"focus"`
+  
+  **Example:** `["uplifting", "focus", "minimal"]`
+</ParamField>
+
+<ParamField path="tags" type="string[]">
+  Descriptive tags for categorization.
+  
+  **Example:** `["mobile", "pulses", "touch"]`, `["spirals", "burst", "gestural"]`
+</ParamField>
+
+<ParamField path="controls" type="string[]">
+  List of notable controls or interactions the toy exposes.
+  
+  Helps users understand what they can adjust.
+  
+  **Example:**
+  ```json
+  [
+    "Quality presets",
+    "Touch drift",
+    "Pinch/rotate gestures"
+  ]
+  ```
+</ParamField>
+
+## First-Run Experience Fields
+
+<ParamField path="firstRunHint" type="string">
+  Short hint shown to first-time users.
+  
+  Guides users to the "wow moment" quickly (1-2 sentences).
+  
+  **Example:** `"Tap Starter first, then pinch/rotate once if you want to shape the flow."`
+</ParamField>
+
+<ParamField path="starterPreset" type="object">
+  Recommended starter preset for first-time users.
+  
+  ```json
+  {
+    "id": "guided-glow",
+    "label": "guided glow starter",
+    "description": "Higher glow with balanced trail and current speed for quick impact."
+  }
+  ```
+  
+  <Expandable title="Preset properties">
+    - **`id`**: Preset identifier (matches in-toy preset ID)
+    - **`label`**: Display name for the preset
+    - **`description`**: Short explanation of what the preset does
+  </Expandable>
+</ParamField>
+
+<ParamField path="wowControl" type="string">
+  The single control that delivers the biggest impact.
+  
+  Highlighted in onboarding flows.
+  
+  **Example:** `"Glow strength"`, `"Beat sensitivity"`
+</ParamField>
+
+<ParamField path="recommendedCapability" type="'microphone' | 'demoAudio' | 'motion'">
+  Suggested capability for best experience.
+  
+  **Example:** `"demoAudio"` (for toys that work better with audio than silence)
+</ParamField>
+
+## Complete Example
+
+Here's a fully annotated toy entry:
+
+```json spiral-burst-example.json
+{
+  // Identity
+  "slug": "spiral-burst",
+  "title": "Spiral Burst",
+  "description": "Colorful spirals rotate and expand with every beat.",
+  
+  // Loading
+  "module": "assets/js/toys/spiral-burst.ts",
+  "type": "module",
+  
+  // Lifecycle
+  "lifecycleStage": "featured",
+  "featuredRank": 4,
+  
+  // Requirements
+  "requiresWebGPU": true,
+  "allowWebGLFallback": true,
+  
+  // Capabilities
+  "capabilities": {
+    "microphone": true,
+    "demoAudio": true,
+    "motion": false
+  },
+  
+  // Discovery
+  "moods": ["energetic", "pulsing", "cosmic"],
+  "tags": ["spirals", "burst", "gestural"],
+  "controls": [
+    "Mode buttons",
+    "Pinch/rotate gestures",
+    "Arrow-key mode swap"
+  ],
+  
+  // First-run guidance
+  "firstRunHint": "Raise Beat sensitivity and watch the Pulse indicator peak in real time.",
+  "starterPreset": {
+    "id": "beat-pop",
+    "label": "beat pop starter",
+    "description": "Higher beat sensitivity with punchy pulse bursts."
+  },
+  "wowControl": "Beat sensitivity",
+  "recommendedCapability": "demoAudio"
+}
+```
+
+## Generated Artifacts
+
+Two files are generated from `toys.json`:
+
+### `assets/js/data/toy-manifest.ts`
+
+TypeScript module with typed toy data:
+
+```typescript toy-manifest.ts
+export interface ToyMetadata {
+  slug: string;
+  title: string;
+  description: string;
+  module: string;
+  type: 'module' | 'page';
+  // ...other fields
+}
+
+export const toys: ToyMetadata[] = [
+  // Generated from toys.json
+];
+```
+
+Imported by the toy loader to populate the library grid.
+
+### `public/toys.json`
+
+Public JSON copy for external tools and API consumers:
+
+```json
+[
+  // Same structure as assets/data/toys.json
+]
+```
+
+<Warning>
+**Never edit generated files directly.** Always edit `assets/data/toys.json` and regenerate:
+
+```bash
+bun run generate:toys
+```
+</Warning>
+
+## Validation
+
+Run validation checks before committing:
+
+```bash
+bun run check:toys
+```
+
+This verifies:
+- JSON schema validity
+- Slug uniqueness
+- Module paths exist
+- Featured toys have `featuredRank`
+- Generated files match source
+- HTML entry points exist for `type: "page"`
+
+## Adding a Toy to the Manifest
+
+<Steps>
+  <Step title="Edit toys.json">
+    Add a new object to the array with required fields.
+  </Step>
+  
+  <Step title="Regenerate artifacts">
+    ```bash
+    bun run generate:toys
+    ```
+  </Step>
+  
+  <Step title="Validate changes">
+    ```bash
+    bun run check:toys
+    ```
+  </Step>
+  
+  <Step title="Commit all three files">
+    ```bash
+    git add assets/data/toys.json
+    git add assets/js/data/toy-manifest.ts
+    git add public/toys.json
+    git commit -m "Add new toy: <title>"
+    ```
+  </Step>
+</Steps>
+
+## Schema Reference
+
+Minimal valid toy entry:
+
+```json minimal-toy.json
+{
+  "slug": "my-toy",
+  "title": "My Toy",
+  "description": "A simple toy.",
+  "module": "assets/js/toys/my-toy.ts",
+  "type": "module"
+}
+```
+
+Maximal toy entry with all optional fields:
+
+```json maximal-toy.json
+{
+  "slug": "my-toy",
+  "title": "My Toy",
+  "description": "A feature-rich toy.",
+  "module": "assets/js/toys/my-toy.ts",
+  "type": "module",
+  "requiresWebGPU": true,
+  "allowWebGLFallback": true,
+  "lifecycleStage": "featured",
+  "featuredRank": 2,
+  "capabilities": {
+    "microphone": true,
+    "demoAudio": true,
+    "motion": true
+  },
+  "moods": ["cosmic", "immersive"],
+  "tags": ["particles", "3d", "interactive"],
+  "controls": ["Mode toggle", "Sensitivity slider"],
+  "firstRunHint": "Try the demo audio first.",
+  "starterPreset": {
+    "id": "balanced",
+    "label": "balanced starter",
+    "description": "Good default for first-time users."
+  },
+  "wowControl": "Mode toggle",
+  "recommendedCapability": "demoAudio"
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep descriptions concise">
+    Aim for 1-2 sentences that capture the core experience. Avoid marketing fluff.
+    
+    **Good:** `"Fly through colorful rings that spin to your music."`
+    
+    **Avoid:** `"Experience an amazing journey through a stunning visual wonderland of incredible rainbow rings!"`
+  </Accordion>
+  
+  <Accordion title="Use consistent mood/tag vocabulary">
+    Review existing toys to reuse common moods and tags. This improves discoverability.
+    
+    **Common moods:** `energetic`, `calming`, `dreamy`, `cosmic`, `immersive`, `playful`, `serene`, `focus`
+  </Accordion>
+  
+  <Accordion title="Limit featured toys">
+    Keep `featuredRank` entries to 5-8 toys maximum. Rotate regularly (every 4-6 weeks).
+  </Accordion>
+  
+  <Accordion title="Test first-run hints">
+    Show your toy to someone unfamiliar and observe their behavior. Update `firstRunHint` and `wowControl` based on real usage.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Toy doesn't appear in library">
+    - Verify entry exists in `assets/data/toys.json`
+    - Run `bun run generate:toys` to regenerate manifest
+    - Check `slug` matches URL parameter: `toy.html?toy=<slug>`
+    - Ensure `module` path is correct and file exists
+  </Accordion>
+  
+  <Accordion title="Check:toys fails">
+    - Read the error message carefully
+    - If "drift detected", run `bun run generate:toys` and commit generated files
+    - If "invalid JSON", validate JSON syntax (use JSON linter)
+    - If "missing module", create the toy file or fix the `module` path
+  </Accordion>
+  
+  <Accordion title="Featured toy not showing at top">
+    - Verify `lifecycleStage: "featured"`
+    - Verify `featuredRank` is set (lower = higher priority)
+    - Check that library UI uses featured sorting
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Toy Development" icon="hammer" href="/development/toy-development">
+    Build and register new toys
+  </Card>
+  <Card title="Toy Interface" icon="code" href="/development/toy-interface">
+    TypeScript interfaces for toys
+  </Card>
+  <Card title="Testing Toys" icon="flask" href="/development/testing-toys">
+    Write tests for toy behavior
+  </Card>
+  <Card title="Toy Lifecycle" icon="arrows-rotate" href="/architecture/toy-lifecycle">
+    Understand runtime behavior
+  </Card>
+</CardGroup>

@@ -1,0 +1,353 @@
+---
+title: Static Hosting Deployment
+description: Deploy Stims to any static hosting provider
+---
+
+Stims can be deployed to any static hosting provider that can serve the `dist/` directory. This guide covers general requirements and provider-specific considerations.
+
+## General Requirements
+
+Any static host should meet these requirements:
+
+<Steps>
+
+<Step title="Point document root to dist/">
+Configure your hosting provider to serve from the `dist/` directory after build.
+</Step>
+
+<Step title="Preserve directory structure">
+Maintain the complete directory structure:
+
+- `dist/index.html` (and other HTML entry points)
+- `dist/assets/**` for hashed JS/CSS bundles
+- `dist/.vite/manifest.json` for asset lookups
+</Step>
+
+<Step title="Configure caching headers">
+Set appropriate caching policies:
+
+- **Long-term caching** for `dist/assets/**` (immutable, 1 year)
+- **No caching or light caching** for HTML files (for fast updates)
+- **Revalidation** for `.vite` metadata
+</Step>
+
+</Steps>
+
+<Warning>
+Do not strip the `.vite` directory or rename asset paths. These are required for proper asset resolution and debugging.
+</Warning>
+
+## Serving the dist/ Folder
+
+After building with `bun run build`, the `dist/` folder contains everything needed for deployment:
+
+```
+dist/
+├── index.html              # Main entry point
+├── toy.html                # Toy viewer
+├── legible.html            # Individual toy entries
+├── multi.html
+├── symph.html
+├── assets/                 # Hashed JS/CSS bundles
+│   ├── index-[hash].js
+│   ├── toy-[hash].js
+│   └── styles-[hash].css
+└── .vite/
+    └── manifest.json       # Asset mapping
+```
+
+## Caching Configuration
+
+Optimal caching strategy for Stims:
+
+<CodeGroup>
+
+```text _headers (Cloudflare Pages)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/.vite/*
+  Cache-Control: public, max-age=0, must-revalidate
+```
+
+```nginx nginx.conf
+location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+location ~ \.html$ {
+    add_header Cache-Control "public, max-age=0, must-revalidate";
+}
+
+location /.vite/ {
+    add_header Cache-Control "public, max-age=0, must-revalidate";
+}
+```
+
+```apache .htaccess
+<FilesMatch "^assets/.*">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+<FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+</FilesMatch>
+
+<FilesMatch "^\.vite/.*">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+</FilesMatch>
+```
+
+</CodeGroup>
+
+<Info>
+Stims includes a `public/_headers` file that Vite copies to `dist/_headers`. Cloudflare Pages automatically reads this file. For other platforms, translate these rules to your platform's cache configuration format.
+</Info>
+
+## Platform-Specific Setup
+
+### Netlify
+
+<Steps>
+
+<Step title="Configure build settings">
+In `netlify.toml` or dashboard:
+
+```toml netlify.toml
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+[build.environment]
+  BUN_VERSION = "1.3.8"
+```
+</Step>
+
+<Step title="Add _headers file">
+Netlify reads `dist/_headers` automatically (copied from `public/_headers` during build).
+</Step>
+
+</Steps>
+
+### Vercel
+
+<Steps>
+
+<Step title="Configure build settings">
+In `vercel.json` or dashboard:
+
+```json vercel.json
+{
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "installCommand": "bun install"
+}
+```
+</Step>
+
+<Step title="Configure caching headers">
+Add to `vercel.json`:
+
+```json vercel.json
+{
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
+}
+```
+</Step>
+
+</Steps>
+
+### GitHub Pages
+
+<Steps>
+
+<Step title="Create workflow file">
+In `.github/workflows/deploy.yml`:
+
+```yaml deploy.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+</Step>
+
+<Step title="Enable GitHub Pages">
+1. Go to repository Settings → Pages
+2. Set source to "GitHub Actions"
+3. Deploy on next push to main
+</Step>
+
+</Steps>
+
+<Warning>
+GitHub Pages has limited cache control configuration. Consider using Cloudflare Pages or Netlify for optimal caching.
+</Warning>
+
+## Local Static Server
+
+Test static hosting locally using the included Bun server:
+
+```bash
+bun run serve:dist
+```
+
+This serves the `dist/` directory as a static site and mimics production hosting behavior.
+
+## Build Artifacts Checklist
+
+Before deploying, verify your build includes:
+
+<Steps>
+
+<Step title="HTML entry points">
+Check that all HTML files are present:
+
+```bash
+ls dist/*.html
+```
+
+Expected: `index.html`, `toy.html`, and any toy-specific HTML files.
+</Step>
+
+<Step title="Hashed assets">
+Verify hashed bundles exist:
+
+```bash
+ls dist/assets/
+```
+
+Expected: Files with content hashes (e.g., `index-a1b2c3d4.js`).
+</Step>
+
+<Step title="Vite manifest">
+Confirm the manifest file exists:
+
+```bash
+cat dist/.vite/manifest.json
+```
+
+This file maps source paths to output paths.
+</Step>
+
+<Step title="Headers file">
+Verify caching headers were copied:
+
+```bash
+cat dist/_headers
+```
+
+This file should contain caching rules from `public/_headers`.
+</Step>
+
+</Steps>
+
+## Deployment Verification
+
+After deploying to production, perform these checks:
+
+<Steps>
+
+<Step title="Verify assets load">
+Open browser DevTools and check:
+
+- All JS/CSS files load from `/assets/` with 200 status
+- No 404 errors in console
+- Proper cache headers on assets (check Network tab)
+</Step>
+
+<Step title="Test entry points">
+Manually navigate to each HTML entry point:
+
+- `/` or `/index.html`
+- `/toy.html`
+- Individual toys (e.g., `/legible.html`)
+</Step>
+
+<Step title="Validate functionality">
+Test core features:
+
+- Page loads and renders correctly
+- Audio input (microphone) permissions
+- Interactive controls and touch/pointer events
+- WebGL rendering works
+</Step>
+
+<Step title="Check caching behavior">
+Verify cache headers in browser DevTools:
+
+- Assets have `max-age=31536000, immutable`
+- HTML has `max-age=0, must-revalidate`
+</Step>
+
+</Steps>
+
+## Troubleshooting
+
+### Assets Return 404
+
+If assets fail to load:
+
+1. Verify build output directory is set to `dist`
+2. Check that `.vite/manifest.json` exists
+3. Ensure all files in `dist/assets/` are being deployed
+4. Confirm asset paths in HTML match deployed paths
+
+### Blank Page or JS Errors
+
+If the page loads but shows errors:
+
+1. Check browser console for specific errors
+2. Verify all JS bundles loaded successfully (Network tab)
+3. Ensure ES2020 features are supported by target browsers
+4. Test locally with `bun run preview` to rule out build issues
+
+### Stale Content After Deploy
+
+If updates don't appear:
+
+1. Check cache headers on HTML files (should not be cached long-term)
+2. Clear browser cache or test in incognito
+3. Verify HTML files have `must-revalidate` directive
+4. Check CDN cache settings if using a CDN

@@ -1,0 +1,197 @@
+---
+title: Cloudflare Pages Deployment
+description: Deploy Stims to Cloudflare Pages with automatic previews and global CDN
+---
+
+Cloudflare Pages is the recommended deployment platform for Stims, providing automatic preview deployments for pull requests and a global CDN for production.
+
+## Configuration
+
+Stims includes minimal Cloudflare configuration in `wrangler.toml`:
+
+```toml wrangler.toml
+name = "stims"
+compatibility_date = "2024-10-20"
+pages_build_output_dir = "dist"
+```
+
+<Warning>
+Do **not** add a `[build]` table to `wrangler.toml`. Pages rejects this configuration and will surface a validation error. Configure build commands directly in the Cloudflare Pages dashboard.
+</Warning>
+
+## Dashboard Setup
+
+Configure these settings in the Cloudflare Pages dashboard:
+
+<Steps>
+
+<Step title="Set build command">
+Configure the build command in your Pages project settings:
+
+```bash
+bun run build
+```
+</Step>
+
+<Step title="Set install command">
+Ensure devDependencies are installed (required for Vite):
+
+```bash
+bun install
+```
+</Step>
+
+<Step title="Configure environment variables">
+Set these environment variables in Pages:
+
+- `BUN_INSTALL_DEV=true` - Install devDependencies
+- `BUN_VERSION=1.3.8` - Pin Bun version (optional, `.bun-version` file provides default)
+</Step>
+
+<Step title="Set build output directory">
+Configure output directory:
+
+```
+dist
+```
+</Step>
+
+</Steps>
+
+## Bun Runtime Version
+
+The repository includes a `.bun-version` file that Cloudflare Pages automatically detects:
+
+```text .bun-version
+1.3.8
+```
+
+This ensures the install step always runs with a compatible runtime. Pages builders occasionally default to older Bun versions, which causes `bun install` to fail against the lockfile.
+
+<Info>
+If you need to override the Bun version, set the `BUN_VERSION` environment variable in your Pages project settings.
+</Info>
+
+## Optimized Install Flow
+
+When `CF_PAGES=1` is detected (automatically set by Cloudflare Pages), the postinstall script may generate `dist/` during the install phase. The build command detects this and skips a redundant Vite build.
+
+This optimization reduces build time on Pages while maintaining the same output.
+
+## CLI Deployment
+
+Deploy from your local machine or CI using these commands:
+
+<CodeGroup>
+
+```bash Build and Deploy
+bun run pages:deploy
+```
+
+```bash Deploy Existing Build
+bun run pages:deploy:reuse
+```
+
+```bash Local Development Server
+bun run pages:dev
+```
+
+</CodeGroup>
+
+### Command Details
+
+- **`pages:deploy`**: Builds the site and deploys to Cloudflare Pages
+- **`pages:deploy:reuse`**: Deploys existing `dist/` folder without rebuilding (useful for CI artifacts)
+- **`pages:dev`**: Builds and serves locally with Wrangler Pages dev server
+
+## Expected Artifacts
+
+After deployment, verify these artifacts are present:
+
+- `dist/` with HTML entry points and hashed assets under `dist/assets/`
+- `dist/.vite/manifest.json` co-located with assets
+- Wrangler-generated preview URL during `pages:dev`
+- Production deployment URL after `pages:deploy` (visible in command output and dashboard)
+
+## Preview Deployments
+
+Cloudflare Pages automatically creates preview deployments for every pull request:
+
+<Steps>
+
+<Step title="Automatic preview creation">
+Every push to a PR rebuilds `dist/` and publishes a new preview URL.
+</Step>
+
+<Step title="Validation workflow">
+Use the preview URL to validate before merging:
+
+1. Open the Pages preview link from the PR status or Cloudflare dashboard
+2. Confirm all static assets load without 404s and console logs remain clean
+3. Smoke-test representative HTML entry points
+</Step>
+
+<Step title="Test multiple entry points">
+Validate each HTML entry point on the preview:
+
+- `index.html` - Homepage
+- `toy.html` - Toy viewer
+- Individual toys (e.g., `/legible.html`, `/multi.html`, `/symph.html`)
+</Step>
+
+<Step title="Runtime testing">
+Test audio and interaction features:
+
+- Microphone input permissions
+- Pointer/touch event handling
+- Audio reactivity
+</Step>
+
+</Steps>
+
+## Caching Configuration
+
+Cloudflare Pages reads caching rules from `public/_headers`, which Vite copies to `dist/_headers` at build time.
+
+The repository includes default caching rules:
+
+```text _headers
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/.vite/*
+  Cache-Control: public, max-age=0, must-revalidate
+```
+
+<Info>
+Long-term caching is enabled for hashed assets in `/assets/*`, while HTML and Vite metadata force revalidation for faster updates.
+</Info>
+
+## Troubleshooting
+
+### Build Fails with Bun Version Mismatch
+
+If the build fails due to Bun version issues:
+
+1. Verify `.bun-version` file exists in the repository root
+2. Set `BUN_VERSION=1.3.8` environment variable in Pages settings
+3. Clear build cache and retry
+
+### DevDependencies Not Installed
+
+If Vite is missing during build:
+
+1. Verify install command is `bun install` (not `bun install --frozen-lockfile`)
+2. Set `BUN_INSTALL_DEV=true` environment variable
+3. Check that `vite` is listed in `devDependencies` in `package.json`
+
+### Assets Return 404
+
+If static assets fail to load:
+
+1. Verify `dist/.vite/manifest.json` exists after build
+2. Check that build output directory is set to `dist` in Pages settings
+3. Ensure `wrangler.toml` has `pages_build_output_dir = "dist"`

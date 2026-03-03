@@ -1,0 +1,347 @@
+---
+title: 'Performance'
+description: 'Quality presets, performance panel, and pixel ratio settings'
+---
+
+The performance panel provides quality presets and granular controls to tune rendering intensity for your device. All settings persist across toys and are stored locally.
+
+## Performance panel
+
+The performance panel appears in the top-right corner when a toy loads. It exposes three primary controls:
+
+<Steps>
+<Step title="Pixel ratio cap">
+
+Limits resolution on high-DPI displays to reduce GPU load:
+
+```typescript
+// From performance-panel.ts:22-24
+const MIN_PIXEL_RATIO = 1;
+const MAX_PIXEL_RATIO = 3;
+```
+
+- **Range**: 1.00x to 3.00x
+- **Default**: 2.00x
+- **Effect**: Lower values render at reduced resolution, improving frame rate on retina/high-DPI screens
+
+</Step>
+
+<Step title="Particle budget">
+
+Scales particle counts for all toys:
+
+```typescript
+// From performance-panel.ts:24-25
+const MIN_PARTICLE_BUDGET = 0.4;
+const MAX_PARTICLE_BUDGET = 1.6;
+```
+
+- **Range**: 40% to 160%
+- **Default**: 100%
+- **Effect**: 1.0 keeps default particle counts; lower values reduce density and motion intensity
+
+</Step>
+
+<Step title="Shader quality">
+
+Chooses shader complexity:
+
+- **Low (faster)**: Simplified shaders for older GPUs
+- **Balanced**: Default quality for most devices
+- **High (detailed)**: Full shader features for high-end GPUs
+
+```typescript
+// From performance-panel.ts:1
+export type ShaderQuality = 'low' | 'balanced' | 'high';
+```
+
+</Step>
+</Steps>
+
+## Quality presets
+
+The settings panel includes 5 quality presets that bundle pixel ratio, render scale, and particle scale:
+
+### Battery saver
+
+```typescript
+// From settings-panel.ts:13-19
+{
+  id: 'performance',
+  label: 'Battery saver',
+  description: 'Lower pixel ratio and fewer particles for older GPUs.',
+  maxPixelRatio: 1.25,
+  renderScale: 0.9,
+  particleScale: 0.65,
+}
+```
+
+**Use case**: Older GPUs, mobile devices, or thermal constraints
+
+### Low motion
+
+```typescript
+// From settings-panel.ts:22-28
+{
+  id: 'low-motion',
+  label: 'Low motion',
+  description: 'Reduce particle density and shimmer for calmer motion.',
+  maxPixelRatio: 1.5,
+  renderScale: 0.95,
+  particleScale: 0.5,
+}
+```
+
+**Use case**: Sensory comfort, reduced-motion preference
+
+### TV balanced
+
+```typescript
+// From settings-panel.ts:30-36
+{
+  id: 'tv',
+  label: 'TV balanced',
+  description: 'Comfortable 10-foot visuals with lower DPI for steady frame pacing.',
+  maxPixelRatio: 1.25,
+  renderScale: 0.9,
+  particleScale: 0.75,
+}
+```
+
+**Use case**: Large displays, 10-foot viewing distance
+
+### Balanced (default)
+
+```typescript
+// From settings-panel.ts:38-44
+{
+  id: 'balanced',
+  label: 'Balanced (default)',
+  description: 'Native look with capped DPI for most laptops and desktops.',
+  maxPixelRatio: 2,
+  renderScale: 1,
+  particleScale: 1,
+}
+```
+
+**Use case**: Most laptops and desktops
+
+### Hi-fi visuals
+
+```typescript
+// From settings-panel.ts:46-53
+{
+  id: 'hi-fi',
+  label: 'Hi-fi visuals',
+  description: 'Higher fidelity for beefy GPUs. May increase thermal load.',
+  maxPixelRatio: 2.5,
+  renderScale: 1,
+  particleScale: 1.35,
+}
+```
+
+**Use case**: High-end GPUs, desktop gaming rigs
+
+<Warning>
+**Hi-fi visuals** may increase GPU temperature and fan noise. Monitor your device's thermal state.
+</Warning>
+
+## Persistent settings
+
+All performance settings are stored in `localStorage` and apply across toys:
+
+```typescript
+// From performance-panel.ts:21
+const STORAGE_KEY = 'stims:performance-settings';
+```
+
+Settings include:
+
+```typescript
+// From performance-panel.ts:3-7
+export type PerformanceSettings = {
+  maxPixelRatio: number;
+  particleBudget: number;
+  shaderQuality: ShaderQuality;
+};
+```
+
+### URL overrides
+
+You can override stored settings via URL parameters:
+
+```text
+https://no.toil.fyi/toy.html?toy=holy&maxPixelRatio=1.5&particleBudget=0.8&shaderQuality=low
+```
+
+URL parameters take precedence over stored values:
+
+```typescript
+// From performance-panel.ts:52-86
+function parseUrlSettings(): Partial<PerformanceSettings> {
+  const params = new URLSearchParams(window.location.search);
+  const urlMaxPixelRatio = params.get('maxPixelRatio');
+  const urlParticleBudget = params.get('particleBudget');
+  const urlShaderQuality = params.get('shaderQuality');
+  // ...
+}
+```
+
+## Performance panel API
+
+Toys can access and subscribe to performance settings programmatically:
+
+### Get active settings
+
+```typescript
+import { getActivePerformanceSettings } from './core/performance-panel.ts';
+
+const settings = getActivePerformanceSettings();
+console.log(settings.maxPixelRatio); // 2
+console.log(settings.particleBudget); // 1
+console.log(settings.shaderQuality); // 'balanced'
+```
+
+### Subscribe to changes
+
+```typescript
+import { subscribeToPerformanceSettings } from './core/performance-panel.ts';
+
+const unsubscribe = subscribeToPerformanceSettings((settings) => {
+  console.log('Settings updated:', settings);
+  // Update toy rendering parameters
+});
+
+// Later: unsubscribe()
+```
+
+### Update settings programmatically
+
+```typescript
+import { setPerformanceSettings } from './core/performance-panel.ts';
+
+setPerformanceSettings({
+  maxPixelRatio: 1.5,
+  particleBudget: 0.8,
+});
+```
+
+## Quality preset details
+
+Each preset applies three scaling factors:
+
+### Max pixel ratio
+
+Caps `window.devicePixelRatio` for the renderer:
+
+```typescript
+// Example: capping at 2x on a 3x retina display
+const effectivePixelRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
+renderer.setPixelRatio(effectivePixelRatio);
+```
+
+**Impact**: Lower values reduce canvas resolution, improving fill-rate-bound performance.
+
+### Render scale
+
+Scales the canvas size relative to the window:
+
+```typescript
+const canvasWidth = window.innerWidth * renderScale;
+const canvasHeight = window.innerHeight * renderScale;
+renderer.setSize(canvasWidth, canvasHeight);
+```
+
+**Impact**: Lower values render fewer pixels, improving both fill rate and shader performance.
+
+### Particle scale
+
+Scales the default particle count for all particle systems:
+
+```typescript
+const particleCount = Math.floor(baseCount * particleScale);
+```
+
+**Impact**: Lower values reduce draw calls and vertex processing.
+
+## Performance tips
+
+From the README:
+
+<Accordion title="Use quality presets">
+
+The performance panel includes 5 presets:
+
+- **Battery saver**: Older GPUs, mobile devices
+- **Low motion**: Reduced particle density for sensory comfort
+- **TV balanced**: 10-foot viewing
+- **Balanced**: Default for most devices
+- **Hi-fi visuals**: High-end GPUs
+
+See the [Getting Started](/introduction#what-youll-need) guide for preset recommendations.
+
+</Accordion>
+
+<Accordion title="Lower pixel ratio on high-DPI displays">
+
+Retina and 4K displays render at 2x–3x the canvas resolution. Lower the pixel ratio cap to 1.25x–1.5x for a 30–50% fill-rate reduction with minimal visual loss.
+
+</Accordion>
+
+<Accordion title="Reduce particle budget">
+
+Particle-heavy toys (e.g., Bubble Harmonics, Fractal Kite Garden) benefit from a 0.6x–0.8x particle budget on mid-tier GPUs.
+
+</Accordion>
+
+<Accordion title="Switch to Low shader quality">
+
+The **Low (faster)** shader quality disables expensive effects:
+
+- Bloom and glow passes
+- Complex normal mapping
+- Multi-pass reflections
+
+</Accordion>
+
+## Monitoring performance
+
+The system does not include a built-in FPS counter, but you can monitor performance via browser DevTools:
+
+<Steps>
+<Step title="Open DevTools Performance Monitor">
+
+- **Chrome/Edge**: `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) → **Show Performance Monitor**
+- **Firefox**: `Ctrl+Shift+E` (or `Cmd+Opt+E` on Mac) → **Performance** tab
+
+</Step>
+
+<Step title="Watch key metrics">
+
+- **FPS**: Target 60 FPS (or 120 FPS on high-refresh displays)
+- **GPU usage**: Should stay below 90% for sustained periods
+- **Frame time**: Target &lt;16.7ms (60 FPS) or &lt;8.3ms (120 FPS)
+
+</Step>
+
+<Step title="Adjust settings if needed">
+
+If FPS drops below 45 or GPU usage exceeds 95%:
+
+1. Lower **Pixel ratio cap** to 1.5x or 1.25x
+2. Reduce **Particle budget** to 70% or 50%
+3. Switch **Shader quality** to **Low (faster)**
+
+</Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+    Configure motion comfort and reduced-motion modes
+  </Card>
+  <Card title="Playing toys" icon="gamepad" href="/guides/playing-toys">
+    Browse and launch toys from the library
+  </Card>
+</CardGroup>

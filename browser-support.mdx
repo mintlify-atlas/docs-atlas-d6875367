@@ -1,0 +1,206 @@
+---
+title: Browser support
+description: Browser compatibility for WebGL, microphone input, and WebGPU features
+---
+
+## Browser compatibility
+
+Feature availability varies by browser and device, but this table provides a practical baseline for running Stim Webtoys.
+
+<Note>
+  Most toys run on WebGL for broad compatibility, with select experiences leveraging WebGPU for advanced effects on supported browsers.
+</Note>
+
+## Compatibility table
+
+| Browser | WebGL toys | Microphone input | WebGPU-only toys |
+| --- | --- | --- | --- |
+| Chrome (desktop/mobile) | ✅ | ✅ | ✅ (supported hardware/drivers) |
+| Edge (desktop) | ✅ | ✅ | ✅ (supported hardware/drivers) |
+| Firefox | ✅ | ✅ | ⚠️ Limited/experimental |
+| Safari (macOS/iOS) | ✅ | ✅ | ⚠️ Version/device dependent |
+
+## Feature details
+
+### WebGL toys
+
+<Info>
+  All modern browsers support WebGL, which powers the majority of Stim Webtoys.
+</Info>
+
+**Fully supported:**
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+**Requirements:**
+- Hardware-accelerated graphics
+- WebGL 2.0 (most toys)
+- Modern GPU drivers
+
+### Microphone input
+
+**Required for audio-reactive features:**
+- Browser must support the Web Audio API
+- User must grant microphone permissions
+- Secure context (HTTPS or localhost)
+
+**All supported browsers include:**
+- Live microphone input
+- Demo audio fallback
+- YouTube tab capture audio (Chrome/Edge)
+
+<Tip>
+  If you can't enable the mic, every toy supports demo audio so you can explore without permissions.
+</Tip>
+
+### WebGPU-only toys
+
+<Warning>
+  WebGPU is still experimental in some browsers. Check [caniuse.com/webgpu](https://caniuse.com/webgpu) for the latest status.
+</Warning>
+
+**Full support:**
+- Chrome 113+ (desktop/mobile) with compatible GPU
+- Edge 113+ (desktop) with compatible GPU
+
+**Limited/experimental:**
+- Firefox: Behind `dom.webgpu.enabled` flag
+- Safari: Partial support in Safari 18+ (macOS 14+)
+
+**WebGPU-only toys:**
+- Multi-Capability Visualizer (`multi`)
+- Aurora Painter (with WebGL fallback)
+- 3D Toy (with WebGL fallback)
+
+<Info>
+  Many toys marked as requiring WebGPU include a `allowWebGLFallback` option and will run on WebGL if WebGPU is unavailable.
+</Info>
+
+## Troubleshooting
+
+### WebGPU fallback warnings
+
+A WebGPU fallback warning means the browser lacked a compatible adapter or device at startup. When this happens:
+
+1. **Toys with WebGL fallback**: Will automatically switch to WebGL rendering
+2. **WebGPU-only toys**: Won't run and will prompt you to pick another toy
+
+**To force a retry:**
+- Refresh the page after toggling a browser flag
+- Restart browser after updating GPU drivers
+- Switch to a compatible browser (Chrome/Edge)
+
+### Microphone permissions
+
+<AccordionGroup>
+  <Accordion title="Permission denied">
+    If the browser denied microphone access:
+    1. Click the lock icon in the address bar
+    2. Change microphone permissions to "Allow"
+    3. Refresh the page or click the start button again
+  </Accordion>
+
+  <Accordion title="Permission prompt doesn't appear">
+    Hard-refresh the page (Ctrl+Shift+R or Cmd+Shift+R) to re-trigger the prompt on most browsers.
+  </Accordion>
+
+  <Accordion title="Can't enable microphone">
+    Switch to demo audio using the fallback button in the UI. You can explore all toys without mic input.
+  </Accordion>
+</AccordionGroup>
+
+### WebGL support
+
+<Warning>
+  If WebGL isn't working, check that hardware acceleration is enabled in your browser settings.
+</Warning>
+
+**Chrome/Edge:**
+1. Visit `chrome://settings/system`
+2. Enable "Use hardware acceleration when available"
+3. Restart browser
+
+**Firefox:**
+1. Visit `about:preferences`
+2. Scroll to "Performance"
+3. Uncheck "Use recommended performance settings"
+4. Enable "Use hardware acceleration when available"
+5. Restart browser
+
+**Safari:**
+1. Hardware acceleration is enabled by default
+2. Update to the latest macOS/iOS version
+3. Check GPU driver updates
+
+## Performance by device
+
+### Desktop
+
+**Recommended:**
+- Modern GPU (dedicated or integrated)
+- 8GB+ RAM
+- Chrome or Edge for best WebGPU support
+
+**Minimum:**
+- Integrated GPU (Intel HD 4000+)
+- 4GB RAM
+- Any modern browser for WebGL toys
+
+### Mobile
+
+**Recommended:**
+- Flagship or mid-range smartphone (2020+)
+- Chrome or Safari
+- WiFi connection for faster load times
+
+**Minimum:**
+- Any modern smartphone with WebGL support
+- Reduce quality settings in the performance panel
+- Use low-power toys like "Pocket Pulse" or "Mobile Ripples"
+
+<Tip>
+  Use the performance panel's quality presets to dial in lower-intensity visuals on mid-tier devices.
+</Tip>
+
+## Testing your browser
+
+Not sure if your browser supports a feature? Visit these test URLs:
+
+- **WebGL**: [get.webgl.org](https://get.webgl.org/)
+- **WebGPU**: [webgpureport.org](https://webgpureport.org/)
+- **Web Audio API**: [webaudio.github.io/web-audio-api](https://webaudio.github.io/web-audio-api/)
+
+## Further reading
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get the dev server running locally
+  </Card>
+  <Card
+    title="Performance guide"
+    icon="gauge"
+    href="/guides/performance"
+  >
+    Optimize settings for your device
+  </Card>
+  <Card
+    title="Audio setup"
+    icon="microphone"
+    href="/guides/audio-setup"
+  >
+    Configure microphone and demo audio
+  </Card>
+  <Card
+    title="Toy catalog"
+    icon="grid"
+    href="/toys/overview"
+  >
+    Browse all available toys
+  </Card>
+</CardGroup>

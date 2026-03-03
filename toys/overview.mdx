@@ -1,0 +1,159 @@
+---
+title: Toy Catalog Overview
+description: Explore the Stim Webtoys collection—interactive, audio-reactive toys organized by moods, tags, and capabilities
+---
+
+# Toy Catalog Overview
+
+The Stim Webtoys Library is a collection of **interactive, audio-reactive web toys** built with Three.js and WebGL. Each toy delivers responsive visual play through live audio interaction, touch gestures, and device motion.
+
+## How Toys Are Organized
+
+Toys in the collection are organized across multiple dimensions to help you discover the right experience:
+
+### By Lifecycle Stage
+
+<AccordionGroup>
+  <Accordion title="Featured Toys">
+    Curated, polished experiences that showcase the best of the collection. These toys include starter presets, first-run hints, and recommended capabilities to deliver immediate "wow" moments.
+    
+    Featured toys are ranked by `featuredRank` to highlight top picks.
+  </Accordion>
+  
+  <Accordion title="Archived Toys">
+    Stable, functional toys that remain available but aren't actively promoted. Many archived toys offer unique aesthetics and interactions worth exploring.
+  </Accordion>
+  
+  <Accordion title="Prototype Toys">
+    Experimental toys in active development. Expect rough edges and evolving features as these toys are refined.
+  </Accordion>
+</AccordionGroup>
+
+### By Moods
+
+Toys are tagged with mood descriptors that capture their aesthetic and sensory qualities:
+
+- **energetic**: High-motion, vibrant visuals that pulse with beat intensity
+- **dreamy**: Soft, flowing visuals with gentle transitions
+- **ethereal**: Luminous, otherworldly atmospheres
+- **cosmic**: Space-themed visuals with particles and nebulae
+- **calming**: Gentle, soothing visuals designed for relaxation
+- **immersive**: Deep, enveloping experiences that fill your field of view
+- **playful**: Light-hearted, bouncy interactions
+- **psychedelic**: Surreal, reality-bending visuals
+- **focus**: Minimal, rhythm-based visuals that support concentration
+- **tactile**: Hands-on experiences emphasizing touch and gesture
+
+<Info>
+  Browse toys by mood at [no.toil.fyi/moods](https://no.toil.fyi/moods/)
+</Info>
+
+### By Tags
+
+Tags describe specific visual elements, techniques, or interaction patterns:
+
+- **Visual elements**: `aurora`, `bubbles`, `halos`, `particles`, `spirals`, `tunnel`, `grid`, `fractals`, `nebula`, `stars`
+- **Techniques**: `3d`, `gestural`, `reactive`, `visualizer`, `shader`, `bloom`, `caustics`
+- **Interaction styles**: `touch`, `mobile`, `pottery`, `sculpting`, `painting`
+- **Aesthetics**: `synthwave`, `cyberpunk`, `retro`, `bioluminescent`, `neon`
+
+<Info>
+  Browse toys by tag at [no.toil.fyi/tags](https://no.toil.fyi/tags/)
+</Info>
+
+### By Capabilities
+
+Each toy declares its input capabilities:
+
+<CardGroup cols={2}>
+  <Card title="Microphone" icon="microphone">
+    Toys that respond to live audio input from your microphone, analyzing frequency bands and beat intensity
+  </Card>
+  
+  <Card title="Demo Audio" icon="music">
+    Toys that support fallback demo audio tracks when microphone access isn't available or desired
+  </Card>
+  
+  <Card title="Motion" icon="mobile">
+    Toys that respond to device motion sensors (accelerometer/gyroscope) for tilt-based interactions
+  </Card>
+  
+  <Card title="WebGPU" icon="chip">
+    Toys that require or benefit from WebGPU for advanced rendering features. Most toys include WebGL fallback support.
+  </Card>
+</CardGroup>
+
+<Info>
+  Browse toys by capability at [no.toil.fyi/capabilities](https://no.toil.fyi/capabilities/)
+</Info>
+
+## Toy Metadata Structure
+
+Each toy in `assets/data/toys.json` includes rich metadata:
+
+```json
+{
+  "slug": "aurora-painter",
+  "title": "Aurora Painter",
+  "description": "Paint flowing aurora ribbons that react to your microphone in layered waves.",
+  "lifecycleStage": "featured",
+  "featuredRank": 1,
+  "requiresWebGPU": true,
+  "allowWebGLFallback": true,
+  "capabilities": {
+    "microphone": true,
+    "demoAudio": true,
+    "motion": false
+  },
+  "moods": ["dreamy", "ethereal", "luminous"],
+  "tags": ["aurora", "ribbons", "gestural"],
+  "controls": [
+    "Ribbon density",
+    "Pinch/rotate gestures",
+    "Arrow-key mood switching"
+  ],
+  "firstRunHint": "Tap Starter first, then pinch/rotate once if you want to shape the flow.",
+  "starterPreset": {
+    "id": "starter",
+    "label": "aurora starter",
+    "description": "Balanced glow and speed tuned for first look delight."
+  },
+  "wowControl": "Quick preset · Starter",
+  "recommendedCapability": "demoAudio"
+}
+```
+
+<Tip>
+  Featured toys include `firstRunHint`, `starterPreset`, `wowControl`, and `recommendedCapability` to guide first-time users to the best experience.
+</Tip>
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Featured Toys" icon="star" href="/toys/featured">
+    Start with curated, polished experiences designed to showcase the collection's best moments
+  </Card>
+  
+  <Card title="Audio Visualizers" icon="waveform" href="/toys/audio-visualizers">
+    Explore toys focused on audio-reactive visualizations and spectral effects
+  </Card>
+  
+  <Card title="Interactive Tools" icon="hand" href="/toys/interactive-tools">
+    Play with creative tools like the pottery wheel and aurora painter
+  </Card>
+  
+  <Card title="WebGPU Toys" icon="sparkles" href="/toys/webgpu-toys">
+    Experience cutting-edge toys that leverage WebGPU for advanced rendering
+  </Card>
+</CardGroup>
+
+## Shareable Links
+
+All toys are accessible via shareable URLs:
+
+- **Individual toy**: `https://no.toil.fyi/toy.html?toy=<slug>`
+- **All toys**: [no.toil.fyi/toys](https://no.toil.fyi/toys/)
+- **Microphone toys**: [no.toil.fyi/capabilities/microphone](https://no.toil.fyi/capabilities/microphone/)
+- **Demo audio toys**: [no.toil.fyi/capabilities/demo-audio](https://no.toil.fyi/capabilities/demo-audio/)
+- **Browse by mood**: [no.toil.fyi/moods](https://no.toil.fyi/moods/)
+- **Browse by tag**: [no.toil.fyi/tags](https://no.toil.fyi/tags/)

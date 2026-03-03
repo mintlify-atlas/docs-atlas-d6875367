@@ -1,0 +1,349 @@
+---
+title: WebGPU Toys
+description: Cutting-edge toys leveraging WebGPU for advanced rendering, compute shaders, and high-performance visuals
+---
+
+# WebGPU Toys
+
+WebGPU toys leverage the modern **WebGPU API** for advanced rendering techniques, compute shaders, and high-performance visuals. Most toys include **WebGL fallback** support for broader browser compatibility.
+
+<Info>
+  WebGPU requires a compatible browser and GPU. Chrome/Edge 113+, Safari 16.4+, and Firefox Nightly support WebGPU on supported hardware.
+</Info>
+
+## What is WebGPU?
+
+WebGPU is a modern graphics API that provides:
+
+- **Compute shaders**: Run parallel computations on the GPU for effects like particle systems, fluid dynamics, and physics simulations
+- **Advanced rendering**: Better control over rendering pipelines, multi-pass effects, and post-processing
+- **Performance**: Lower overhead and better multi-threading compared to WebGL
+- **Modern features**: Support for features like render bundles, timestamp queries, and texture compression
+
+<Tip>
+  All toys in this collection set `requiresWebGPU: true` in their metadata, but most also set `allowWebGLFallback: true` for graceful degradation.
+</Tip>
+
+## Featured WebGPU Toys
+
+<CardGroup cols={2}>
+  <Card 
+    title="Aurora Painter" 
+    icon="paintbrush"
+    href="https://no.toil.fyi/toy.html?toy=aurora-painter"
+  >
+    Paint flowing aurora ribbons that react to your microphone in layered waves.
+    
+    **Moods**: dreamy, ethereal, luminous  
+    **Tags**: aurora, ribbons, gestural  
+    **Lifecycle**: featured (rank 1)  
+    **WebGL Fallback**: Yes
+    
+    <Tip>
+      Uses WebGPU compute shaders for smooth ribbon flow and layered wave effects.
+    </Tip>
+  </Card>
+  
+  <Card 
+    title="Bioluminescent Tidepools" 
+    icon="droplet"
+    href="https://no.toil.fyi/toy.html?toy=bioluminescent-tidepools"
+  >
+    Sketch glowing currents that bloom with high-frequency sparkle from your music.
+    
+    **Moods**: serene, ethereal, fiery, dreamy  
+    **Tags**: ocean, bioluminescent, caustics, gestural  
+    **Lifecycle**: featured (rank 2)  
+    **WebGL Fallback**: Yes
+    
+    <Tip>
+      Leverages WebGPU for real-time caustics and bloom effects.
+    </Tip>
+  </Card>
+  
+  <Card 
+    title="Tactile Sand Table" 
+    icon="mountain"
+    href="https://no.toil.fyi/toy.html?toy=tactile-sand-table"
+  >
+    Heightfield sand ripples that respond to bass, mids, and device tilt.
+    
+    **Moods**: calming, grounded  
+    **Tags**: sand, tilt, haptics  
+    **Lifecycle**: featured (rank 3)  
+    **WebGL Fallback**: Yes
+    
+    <Tip>
+      Uses WebGPU compute shaders for heightfield physics and sand ripple simulation.
+    </Tip>
+  </Card>
+  
+  <Card 
+    title="Neon Wave" 
+    icon="waveform"
+    href="https://no.toil.fyi/toy.html?toy=neon-wave"
+  >
+    Retro-wave visualizer with bloom effects, custom shaders, and four color themes.
+    
+    **Moods**: energetic, immersive  
+    **Tags**: synthwave, cyberpunk, retro, visualizer, bloom  
+    **Lifecycle**: featured (rank 6)  
+    **WebGL Fallback**: Yes
+    
+    <Tip>
+      WebGPU enables multi-pass bloom and HDR rendering for vivid neon effects.
+    </Tip>
+  </Card>
+</CardGroup>
+
+## WebGPU-Only Toys
+
+Some toys require WebGPU and do **not** include WebGL fallback due to their reliance on compute shaders or advanced rendering features:
+
+<Card 
+  title="Multi-Capability Visualizer" 
+  icon="wand-magic-sparkles"
+  href="https://no.toil.fyi/toy.html?toy=multi"
+>
+  Shapes and lights move with both sound and device motion.
+  
+  **Moods**: energetic, cosmic  
+  **Tags**: motion, hybrid, immersive  
+  **Lifecycle**: archived  
+  **WebGL Fallback**: Yes (but limited features)
+  
+  **Why WebGPU?** Combines audio reactivity with device motion using compute shaders for hybrid particle systems.
+</Card>
+
+<Info>
+  If a WebGPU-only toy fails to load, check your browser's WebGPU support at [webgpu.io](https://webgpu.io) or try a Chromium-based browser.
+</Info>
+
+## All WebGPU Toys
+
+Every toy in the collection requires WebGPU. Below is the complete list:
+
+<AccordionGroup>
+  <Accordion title="Featured Toys (7 toys)">
+    1. **Aurora Painter** - Paint flowing aurora ribbons (rank 1)
+    2. **Bioluminescent Tidepools** - Sketch glowing currents (rank 2)
+    3. **Tactile Sand Table** - Heightfield sand ripples (rank 3)
+    4. **Spiral Burst** - Colorful spirals rotate with beats (rank 4)
+    5. **Cosmic Particles** - Orbiting swirls and nebula fly-throughs (rank 5)
+    6. **Neon Wave** - Retro-wave visualizer (rank 6)
+    7. **Bubble Harmonics** - Audio-inflated bubbles (rank 7)
+  </Accordion>
+  
+  <Accordion title="Archived Toys (17 toys)">
+    - **3D Toy** - Twisting 3D tunnel
+    - **Pottery Wheel Sculptor** - Spin and shape clay vessels
+    - **Evolutionary Weirdcore** - Surreal fractal landscapes
+    - **Microphone Geometry Visualizer** - Shifting geometric forms
+    - **Halo Visualizer** - Layered halos and particles
+    - **Multi-Capability Visualizer** - Sound and motion hybrid
+    - **Synesthetic Visualizer** - Audio-visual pattern blending
+    - **Terminal Word Grid** - Retro text grid
+    - **Spectrograph** - Gentle audio spectrograph
+    - **Grid Visualizer** - Cube waves and bouncing spheres
+    - **Audio Light Show** - Shader styles and color palettes
+    - **Rainbow Tunnel** - Colorful spinning rings
+    - **Star Field** - Shimmering stars
+    - **Fractal Kite Garden** - Branching kite fractals
+  </Accordion>
+  
+  <Accordion title="Prototype Toys (3 toys)">
+    - **Pocket Pulse** - Mobile-optimized pulse field
+    - **Mobile Ripples** - Low-power neon ripples
+    - **MilkDrop Proto** - Feedback engine visualizer
+  </Accordion>
+</AccordionGroup>
+
+## WebGPU Features in Use
+
+<AccordionGroup>
+  <Accordion title="Compute Shaders">
+    Several toys leverage **compute shaders** for GPU-accelerated effects:
+    
+    - **Tactile Sand Table**: Heightfield physics simulation
+    - **Aurora Painter**: Ribbon flow and layered wave effects
+    - **Bioluminescent Tidepools**: Fluid dynamics and caustics
+    - **Cosmic Particles**: Particle system updates and swirl motion
+    
+    Compute shaders run in parallel on the GPU, enabling real-time simulations that would be too slow on the CPU.
+  </Accordion>
+  
+  <Accordion title="Multi-Pass Rendering">
+    WebGPU's render pass system enables advanced multi-pass effects:
+    
+    - **Neon Wave**: Multi-pass bloom with HDR tonemapping
+    - **Bioluminescent Tidepools**: Separate passes for caustics, glow, and bloom
+    - **MilkDrop Proto**: Feedback buffer passes for warp effects
+    
+    Each pass can read from the previous pass's output, enabling effects like motion blur, depth of field, and screen-space reflections.
+  </Accordion>
+  
+  <Accordion title="Texture Compression">
+    WebGPU supports modern texture compression formats (BC, ETC2, ASTC) for reduced memory usage and faster loading:
+    
+    - **Cosmic Particles**: Compressed nebula textures
+    - **Star Field**: Compressed star sprite textures
+    - **Rainbow Tunnel**: Compressed gradient textures
+  </Accordion>
+  
+  <Accordion title="Timestamp Queries">
+    WebGPU's timestamp queries enable precise performance profiling:
+    
+    - Measure GPU time per render pass
+    - Identify bottlenecks in compute shaders
+    - Dynamically adjust quality based on GPU performance
+    
+    <Tip>
+      Quality presets use timestamp queries to auto-detect when to reduce particle counts or disable expensive effects.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## WebGL Fallback
+
+Most toys include **WebGL fallback** for broader browser compatibility:
+
+<CardGroup cols={2}>
+  <Card title="Full Feature Parity" icon="check">
+    Toys with full WebGL fallback:
+    - Aurora Painter
+    - Bioluminescent Tidepools
+    - Neon Wave
+    - Bubble Harmonics
+    
+    These toys detect WebGPU availability and gracefully fall back to WebGL with equivalent features.
+  </Card>
+  
+  <Card title="Limited Features" icon="triangle-exclamation">
+    Toys with limited WebGL fallback:
+    - Tactile Sand Table (no heightfield physics)
+    - Multi-Capability Visualizer (simpler particle system)
+    - MilkDrop Proto (no feedback effects)
+    
+    These toys run on WebGL but disable compute-shader-dependent features.
+  </Card>
+</CardGroup>
+
+<Info>
+  The toy metadata includes `allowWebGLFallback: true` when fallback is supported. Check `requiresWebGPU` in `toys.json` for each toy's requirements.
+</Info>
+
+## Browser Support
+
+<Accordion title="WebGPU Browser Compatibility">
+  | Browser | Status | Notes |
+  |---------|--------|-------|
+  | **Chrome/Edge 113+** | ✅ Full support | Recommended for best experience |
+  | **Safari 16.4+ (macOS/iOS)** | ✅ Full support | Requires macOS Ventura or iOS 16.4+ |
+  | **Firefox Nightly** | ⚠️ Experimental | Enable via `about:config` flag |
+  | **Firefox Stable** | ❌ Not supported | Use Chrome/Safari or wait for stable release |
+  
+  <Tip>
+    Check your browser's WebGPU support at [webgpu.io](https://webgpu.io)
+  </Tip>
+</Accordion>
+
+<Accordion title="GPU Compatibility">
+  WebGPU requires a compatible GPU:
+  
+  - **Desktop**: NVIDIA GTX 900+ series, AMD GCN 3rd gen+, Intel HD 500+
+  - **Mobile**: Apple A11+, Qualcomm Adreno 600+, Mali G72+
+  - **Drivers**: Up-to-date GPU drivers required
+  
+  If your GPU isn't supported, toys will fall back to WebGL (if available) or show a compatibility warning.
+</Accordion>
+
+## Performance Tips
+
+<Steps>
+  <Step title="Enable Hardware Acceleration">
+    Ensure hardware acceleration is enabled in your browser settings:
+    
+    - **Chrome/Edge**: Settings → System → Use hardware acceleration when available
+    - **Safari**: Preferences → Advanced → Show Develop menu → Enable WebGPU
+  </Step>
+  
+  <Step title="Use Quality Presets">
+    All toys include **quality presets** in the settings panel:
+    
+    - **Low**: Minimal particles, reduced bloom, simplified shaders
+    - **Medium**: Balanced for mid-tier GPUs
+    - **High**: Full fidelity for flagship devices
+  </Step>
+  
+  <Step title="Monitor GPU Usage">
+    Use browser DevTools to monitor GPU usage:
+    
+    - **Chrome**: DevTools → Performance → Enable "GPU" track
+    - **Safari**: Develop → Show Web Inspector → Timelines → GPU
+  </Step>
+  
+  <Step title="Update Drivers">
+    Keep GPU drivers up-to-date for best performance and WebGPU compatibility.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Toy won't load / Black screen">
+    **Possible causes**:
+    1. WebGPU not supported by browser or GPU
+    2. Hardware acceleration disabled
+    3. Outdated GPU drivers
+    
+    **Solutions**:
+    - Check WebGPU support at [webgpu.io](https://webgpu.io)
+    - Enable hardware acceleration in browser settings
+    - Update GPU drivers
+    - Try a Chromium-based browser
+  </Accordion>
+  
+  <Accordion title="Low framerate / Stuttering">
+    **Possible causes**:
+    1. GPU overloaded
+    2. Quality preset too high
+    3. Other GPU-intensive apps running
+    
+    **Solutions**:
+    - Switch to **Low** or **Medium** quality preset
+    - Close other GPU-intensive apps/tabs
+    - Reduce browser window size
+    - Disable browser extensions
+  </Accordion>
+  
+  <Accordion title="WebGL fallback not working">
+    **Possible causes**:
+    1. Toy doesn't support WebGL fallback
+    2. WebGL disabled in browser
+    
+    **Solutions**:
+    - Check toy metadata for `allowWebGLFallback`
+    - Enable WebGL in browser settings
+    - Try a different toy with fallback support
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Featured Toys" icon="star" href="/toys/featured">
+    Explore curated WebGPU toys with starter presets
+  </Card>
+  
+  <Card title="Audio Visualizers" icon="waveform" href="/toys/audio-visualizers">
+    Try audio-reactive visualizers powered by WebGPU
+  </Card>
+  
+  <Card title="Interactive Tools" icon="hand" href="/toys/interactive-tools">
+    Experience gestural tools with WebGPU compute shaders
+  </Card>
+  
+  <Card title="Toy Catalog" icon="grid" href="/toys/overview">
+    Browse the complete catalog by moods and capabilities
+  </Card>
+</CardGroup>

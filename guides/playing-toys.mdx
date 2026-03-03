@@ -1,0 +1,158 @@
+---
+title: 'Playing toys'
+description: 'Browse and launch toys from the library interface'
+---
+
+The Stims library provides a searchable, filterable toy collection at [no.toil.fyi](https://no.toil.fyi). Every toy launches from the browser with no installation required.
+
+## Browsing the library
+
+The main library interface combines search, filters, and capability badges to help you find the right toy for your session.
+
+### Search and filters
+
+<Steps>
+<Step title="Open the library">
+
+Navigate to the homepage at [no.toil.fyi](https://no.toil.fyi). The library displays all available toys in a searchable grid.
+
+</Step>
+
+<Step title="Search by keyword">
+
+Use the search field to match toy titles, tags, moods, or capabilities:
+
+```text
+Search by toy, mood, or capability
+```
+
+The search matches against:
+- Toy names (e.g., "Aurora Painter", "Bubble Harmonics")
+- Tags (e.g., "ribbons", "particles", "tunnel")
+- Moods (e.g., "calming", "energetic", "dreamy")
+- Capabilities (e.g., "microphone", "motion", "demo audio")
+
+</Step>
+
+<Step title="Apply filters">
+
+Click **Filters and sorting** to refine results:
+
+- **Mood filters**: Calm, Energetic
+- **Capability filters**: Microphone, Motion, Demo audio, WebGPU
+- **Sort options**: Featured, Newest, Most immersive, A → Z
+
+</Step>
+</Steps>
+
+### Capability badges
+
+Each toy card displays badges that indicate required features:
+
+| Badge | Meaning |
+|-------|--------|
+| 🎙️ Microphone | Toy responds to live microphone input |
+| 🎵 Demo audio | Toy includes built-in procedural audio fallback |
+| 🧭 Motion | Toy uses device tilt or orientation sensors |
+| ⚡ WebGPU | Toy requires WebGPU; may fall back to WebGL |
+
+## Launching a toy
+
+Click any toy card to open it in the shared toy shell (`toy.html`). The shell runs a capability preflight before loading the toy module.
+
+<Steps>
+<Step title="Capability check">
+
+The system checks:
+- **Graphics**: WebGL or WebGPU availability
+- **Microphone**: Permission state and browser support
+- **Motion**: Device orientation API availability
+
+If a required capability is missing, you'll see fallback guidance (e.g., "Use demo audio instead").
+
+</Step>
+
+<Step title="Choose audio source">
+
+Toys that support audio offer multiple input options:
+
+- **Microphone**: Live audio input from your device
+- **Demo audio**: Pre-mixed procedural track (no permission needed)
+- **YouTube tab capture**: Paste a YouTube URL to capture tab audio
+
+See the [Audio setup](/guides/audio-setup) guide for detailed instructions.
+
+</Step>
+
+<Step title="Play the toy">
+
+Once audio starts, the toy begins rendering. Controls appear in the top-right corner:
+
+- **Settings panel**: Toy-specific controls (speed, color, intensity)
+- **Performance panel**: Quality presets and pixel ratio caps
+
+Use the **← Back to library** link in the top-left to return to the library without losing your audio session.
+
+</Step>
+</Steps>
+
+## Toy discovery pages
+
+Beyond the searchable library, Stims generates static index pages for each category:
+
+<Accordion title="Collections">
+
+- **All toys**: `/toys/` — Complete toy list with descriptions
+- **Tags**: `/tags/` — Browse by visual style (e.g., `ribbons`, `particles`, `fractal`)
+- **Moods**: `/moods/` — Browse by feeling (e.g., `calming`, `energetic`, `dreamy`)
+- **Capabilities**: `/capabilities/` — Filter by input type (e.g., `/capabilities/microphone/`)
+
+</Accordion>
+
+<Accordion title="Featured toy pages">
+
+Each toy has a dedicated detail page at `/toys/<slug>/`:
+
+- **Aurora Painter**: `/toys/aurora-painter/`
+- **Halo Visualizer**: `/toys/holy/`
+- **Grid Visualizer**: `/toys/cube-wave/`
+
+These pages include toy-specific hints, control descriptions, and direct launch links.
+
+</Accordion>
+
+## Library features
+
+### Stim builder
+
+The **Create your own stim setup** section (on the homepage) generates recommendations based on:
+
+- **Mood**: Calming, Energetic, Dreamy, Playful
+- **Energy**: Soft, Balanced, Intense
+- **Interaction**: Touch/gesture, Tilt/motion, Mostly ambient
+- **Audio**: Built-in demo, Microphone reactive, No audio
+- **Renderer**: Any, WebGPU-first, Broader compatibility
+
+Select your preferences, then click **Launch a suggested stim** to open a matching toy.
+
+### System check
+
+The **Check your device** panel shows real-time readiness for:
+
+- **🖥️ Graphics**: WebGL/WebGPU status
+- **🎙️ Mic**: Permission state and browser support
+- **🧭 Motion**: Device orientation availability
+- **🫧 Comfort**: Reduced-motion preference detection
+
+Click **Open full system check** to see detailed capability probes and fallback guidance.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Audio setup" icon="microphone" href="/guides/audio-setup">
+    Configure microphone, demo audio, or YouTube tab capture
+  </Card>
+  <Card title="Performance" icon="gauge" href="/guides/performance">
+    Adjust quality presets and pixel ratio for your device
+  </Card>
+</CardGroup>

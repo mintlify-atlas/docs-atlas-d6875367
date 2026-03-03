@@ -1,0 +1,159 @@
+---
+title: Getting Started
+description: Learn how to contribute to the Stims Webtoys Library
+---
+
+## Welcome Contributors
+
+Thanks for contributing to the Stim Webtoys Library. This guide covers the current Bun-first workflow for humans and automation contributors.
+
+<Note>
+  This project uses **Bun 1.3+** as the primary package manager and runtime. The repo declares `bun@1.3.8` in `package.json`.
+</Note>
+
+## Quick Start
+
+<Steps>
+  <Step title="Install Bun">
+    Install **Bun 1.3+** from [bun.sh](https://bun.sh/). The repository is configured with `bun@1.3.8` in `package.json`.
+  </Step>
+
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/zz-plant/stims.git
+    cd stims
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    bun install
+    ```
+
+    The repository tracks `bun.lock` for reproducible installs. Use `bun install --frozen-lockfile` in CI or other reproducible-install contexts where lockfile changes must be disallowed.
+
+    <Note>
+      Bun does not automatically run `prepare` scripts, so the repo includes a `postinstall` hook that installs Husky when `npm_config_user_agent` starts with `bun`. If that step fails, fall back to `bun x husky install`.
+    </Note>
+  </Step>
+
+  <Step title="Start the Dev Server">
+    ```bash
+    bun run dev
+    ```
+
+    Open `http://localhost:5173` in your browser to see the toys in action.
+  </Step>
+</Steps>
+
+## Quality Checks
+
+Use these commands before opening a PR:
+
+### Full Gate for JS/TS Changes
+
+```bash
+bun run check
+```
+
+This runs Biome check + typecheck + tests. **Required for all JS/TS edits.**
+
+### Faster Iteration Gate
+
+When you need quicker feedback during development:
+
+```bash
+bun run check:quick
+```
+
+Runs Biome check + typecheck without tests.
+
+### Toy Registry/Docs Consistency Check
+
+When adding or renaming toys:
+
+```bash
+bun run check:toys
+```
+
+### Run Targeted Tests
+
+```bash
+bun run test tests/path/to/spec.test.ts
+```
+
+<Warning>
+  Always use `bun run test` (not raw `bun test`) so preload/importmap flags from `package.json` are always applied.
+</Warning>
+
+## Branches, Commits, and Pull Requests
+
+### Branch Strategy
+
+- Branch from `main` and keep PRs focused
+- Use descriptive branch names that reflect your changes
+
+### Commit Messages
+
+- Commit messages should be sentence case with no trailing period
+- Example: `Add aurora painter toy with microphone support`
+
+### PR Descriptions
+
+Your PR description should include:
+
+- **Short summary** of the change
+- **Explicit test command list** showing what you ran
+- **Explicit list of docs touched** (or write `None`)
+
+## Documentation Expectations
+
+When workflows or structure change, update docs in the same PR:
+
+- Follow [`docs/DOCS_MAINTENANCE.md`](https://github.com/zz-plant/stims/blob/main/docs/DOCS_MAINTENANCE.md) as the canonical docs synchronization contract
+- Treat [`docs/README.md`](https://github.com/zz-plant/stims/blob/main/docs/README.md) as the canonical docs index and update it whenever docs are added, renamed, moved, or deleted
+
+## Toy-Specific Changes
+
+For new or renamed toys, update all of the following together:
+
+- Toy implementation in `assets/js/toys/`
+- Toy metadata in `assets/data/toys.json`
+- Standalone page in `toys/` for page-backed toys
+- `docs/TOY_SCRIPT_INDEX.md` and `docs/toys.md`
+- Tests in `tests/` where behavior changed
+
+### Scaffold Helper
+
+Use the scaffold helper to create new toys:
+
+```bash
+bun run scripts/scaffold-toy.ts --slug my-toy --title "My Toy" --type module --with-test
+```
+
+This creates:
+- Starter module from toy development patterns
+- Metadata entry in `assets/data/toys.json`
+- Updates to `docs/TOY_SCRIPT_INDEX.md`
+- Optional minimal Bun spec
+
+## Choose Your Workflow Lane
+
+| Change type | Minimum checks before commit | Usually add |
+| --- | --- | --- |
+| Docs-only wording/link updates | Proofread + command/path validation | `bun run check:quick` when commands changed |
+| JS/TS behavior changes | `bun run check` | Targeted test run while iterating |
+| Toy addition/rename/registration edits | `bun run check` + `bun run check:toys` | `bun run health:toys` and toy docs updates |
+| SEO generation/check logic changes | `bun run check` + `bun run check:seo` | `bun run generate:seo` to refresh artifacts |
+| Deploy pipeline/workflow changes | `bun run check` + local smoke (`bun run dev:check`) | `bun run pages:dev` before deploy |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Development Setup" icon="code" href="/contributing/development-setup">
+    Learn about the local development environment and commands
+  </Card>
+  <Card title="Code Quality" icon="check" href="/contributing/code-quality">
+    Explore linting, formatting, and testing practices
+  </Card>
+</CardGroup>

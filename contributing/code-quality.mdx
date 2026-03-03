@@ -1,0 +1,411 @@
+---
+title: Code Quality
+description: Linting, formatting, and testing practices for Stims
+---
+
+## Overview
+
+The Stim Webtoys Library maintains high code quality through automated checks using Biome for linting and formatting, TypeScript for type checking, and Bun's native test runner for testing.
+
+## Quality Gate Commands
+
+### Full Quality Gate
+
+<Note>
+  Run this before committing any JS/TS changes.
+</Note>
+
+```bash
+bun run check
+```
+
+This runs:
+- Biome check (lint + format)
+- TypeScript type checking
+- All tests
+
+### Quick Quality Gate
+
+For faster iteration during development:
+
+```bash
+bun run check:quick
+```
+
+This runs:
+- Biome check (lint + format)
+- TypeScript type checking
+
+Skips tests for quicker feedback.
+
+## Linting with Biome
+
+The project uses [Biome](https://biomejs.dev/) for fast, reliable linting.
+
+<CodeGroup>
+
+```bash Check Linting
+# Run lint checks
+bun run lint
+```
+
+```bash Auto-Fix Issues
+# Run lint checks and auto-fix issues
+bun run lint:fix
+```
+
+</CodeGroup>
+
+### Lint Scope
+
+Biome lints these directories:
+- `assets/`
+- `scripts/`
+- `tests/`
+
+### Common Lint Issues
+
+If you encounter lint drift:
+
+1. Run auto-fix:
+   ```bash
+   bun run lint:fix
+   ```
+
+2. Follow up with format:
+   ```bash
+   bun run format
+   ```
+
+## Formatting with Biome
+
+Biome also handles code formatting for consistent style.
+
+<CodeGroup>
+
+```bash Format Code
+# Apply Biome formatting
+bun run format
+```
+
+```bash Check Formatting
+# Validate formatting without changes
+bun run format:check
+```
+
+</CodeGroup>
+
+### Format Scope
+
+Biome formats these directories:
+- `assets/`
+- `scripts/`
+- `tests/`
+
+## Type Checking with TypeScript
+
+The project uses TypeScript for type safety without emitting compiled files.
+
+<CodeGroup>
+
+```bash Type Check Once
+# Run TypeScript type checking
+bun run typecheck
+```
+
+```bash Type Check Watch
+# Continuous type checking
+bun run typecheck:watch
+```
+
+</CodeGroup>
+
+<Warning>
+  If you encounter typecheck errors after dependency changes, rerun `bun install` then `bun run typecheck`.
+</Warning>
+
+## Testing with Bun
+
+The project uses Bun's native test runner with special configuration for Three.js and DOM testing.
+
+### Running Tests
+
+<CodeGroup>
+
+```bash Run All Tests
+# Run all tests with preload/importmap
+bun run test
+```
+
+```bash Watch Mode
+# Run tests in watch mode
+bun run test:watch
+```
+
+```bash Targeted Tests
+# Run specific test file
+bun run test tests/path/to/spec.test.ts
+```
+
+```bash Filter Tests
+# Run tests matching pattern
+bun run test -- --filter "toy"
+```
+
+</CodeGroup>
+
+<Warning>
+  Always use `bun run test` (not raw `bun test`) so that preload/importmap flags from `package.json` are always applied.
+</Warning>
+
+### Test Types
+
+#### Compatibility Tests
+
+Fast compatibility coverage for renderer preference and fallback state logic:
+
+```bash
+bun run test:compat
+```
+
+#### Full Compatibility Regression
+
+Includes loader + toy-view flows to surface integration issues:
+
+```bash
+bun run test:compat:full
+```
+
+#### Agent Integration Tests
+
+Focused test for MCP/agent integration path:
+
+```bash
+bun run test:agent
+```
+
+### Test Configuration
+
+Tests run with these important flags:
+
+- `--preload=./tests/setup.ts` - Loads happy-dom globals for DOM testing
+- `--importmap=./tests/importmap.json` - Provides Three.js stub for headless execution
+
+These are automatically applied when you use `bun run test`.
+
+### Test Structure
+
+```typescript
+import { describe, test, expect } from 'bun:test';
+
+describe('My Feature', () => {
+  test('should do something', () => {
+    // Test implementation
+    expect(result).toBe(expected);
+  });
+});
+```
+
+## Quality Expectations by Change Type
+
+<Steps>
+  <Step title="JS/TS Edits">
+    Run `bun run check` before commit.
+    
+    **Required checks**:
+    - Biome lint/format
+    - TypeScript type checking
+    - All tests passing
+  </Step>
+
+  <Step title="Docs-Only Edits">
+    Tests and typecheck can be skipped unless command paths/workflows changed.
+    
+    **Recommended checks**:
+    - Proofread
+    - Command/path validation
+    - `bun run check:quick` if commands changed significantly
+  </Step>
+
+  <Step title="Toy Additions/Slug Changes">
+    Run `bun run check:toys` and update toy docs together.
+    
+    **Required checks**:
+    - `bun run check`
+    - `bun run check:toys`
+    - `bun run health:toys`
+    - Update toy docs (`docs/TOY_DEVELOPMENT.md`, `docs/TOY_SCRIPT_INDEX.md`, `docs/toys.md`)
+  </Step>
+
+  <Step title="SEO Generation/Check Logic">
+    Run `bun run check:seo` to validate SEO artifacts.
+    
+    **Required checks**:
+    - `bun run check`
+    - `bun run check:seo`
+    - `bun run generate:seo` to refresh artifacts
+  </Step>
+
+  <Step title="Deploy Pipeline/Workflow Changes">
+    Run local smoke test before deploy.
+    
+    **Required checks**:
+    - `bun run check`
+    - `bun run dev:check` (local smoke)
+    - `bun run pages:dev` before deploy
+  </Step>
+</Steps>
+
+## Specialized Quality Commands
+
+### Toy Quality
+
+<CodeGroup>
+
+```bash Consistency Check
+# Validate toy registration/docs consistency
+bun run check:toys
+```
+
+```bash Health Check
+# Run toy runtime/metadata diagnostics
+bun run health:toys
+```
+
+```bash Play Toy
+# Test specific toy against local dev server
+bun run play:toy <slug>
+```
+
+</CodeGroup>
+
+### SEO Quality
+
+<CodeGroup>
+
+```bash Generate SEO
+# Regenerate SEO-derived assets
+bun run generate:seo
+```
+
+```bash Validate SEO
+# Ensure generated SEO artifacts are valid
+bun run check:seo
+```
+
+</CodeGroup>
+
+## Pre-commit Hooks
+
+The project uses Husky for Git hooks.
+
+### Installation
+
+Husky is installed automatically via the `postinstall` script when using Bun. If it fails:
+
+```bash
+bun x husky install
+```
+
+### Hook Behavior
+
+Pre-commit hooks will:
+- Run linting checks
+- Validate formatting
+- Prevent commits if checks fail
+
+## Targeted Testing Patterns
+
+### Run Single Test File
+
+```bash
+bun run test tests/path/to/spec.test.ts
+```
+
+### Run Tests Matching Pattern
+
+```bash
+bun run test -- --filter "toy"
+```
+
+### Watch Specific Tests
+
+```bash
+bun run test:watch tests/path/to/spec.test.ts
+```
+
+## Troubleshooting
+
+### Test Behavior Differs
+
+**Problem**: `bun run test` behaves differently from direct `bun test`
+
+**Solution**: Always invoke through package scripts so preload/importmap flags apply:
+```bash
+bun run test
+```
+
+### Formatting/Lint Drift
+
+**Problem**: Inconsistent code style or lint errors
+
+**Solution**: Run fix and format in sequence:
+```bash
+bun run lint:fix
+bun run format
+```
+
+### Typecheck Errors After Updates
+
+**Problem**: Type errors appear after dependency changes
+
+**Solution**: Reinstall dependencies and recheck:
+```bash
+bun install
+bun run typecheck
+```
+
+### check:toys Failures
+
+**Problem**: Toy consistency check fails after renaming
+
+**Solution**: Verify all toy docs and metadata were updated together:
+- `assets/data/toys.json`
+- `docs/TOY_DEVELOPMENT.md`
+- `docs/TOY_SCRIPT_INDEX.md`
+- `docs/toys.md`
+
+## Commit Checklist
+
+Before committing:
+
+- [ ] Run appropriate quality gate (`bun run check` or `bun run check:quick`)
+- [ ] Run specialized checks if needed (`check:toys`, `check:seo`, etc.)
+- [ ] Update docs if workflows or structure changed
+- [ ] Use sentence case commit message with no trailing period
+- [ ] Verify all tests pass
+- [ ] Ensure no lint or format issues remain
+
+## PR Checklist
+
+Before opening a PR:
+
+- [ ] Commit title is sentence case with no trailing period
+- [ ] PR description includes:
+  - Short summary of changes
+  - Explicit list of tests run
+  - Explicit list of docs touched/added (or "None")
+- [ ] All quality checks pass
+- [ ] Docs are updated if scripts/workflows changed
+- [ ] Linked docs are synchronized per `docs/DOCS_MAINTENANCE.md`
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/contributing/getting-started">
+    Review contribution guidelines
+  </Card>
+  <Card title="Development Setup" icon="code" href="/contributing/development-setup">
+    Set up your local environment
+  </Card>
+</CardGroup>

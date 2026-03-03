@@ -1,0 +1,284 @@
+---
+title: 'Accessibility'
+description: 'Motion comfort, reduced motion, and accessibility features'
+---
+
+Stims provides motion comfort controls, reduced-motion support, and sensory-friendly defaults to make audio-reactive visuals accessible across comfort levels.
+
+## Motion preferences
+
+The motion preference system detects and respects your comfort settings, storing them locally for future sessions.
+
+### Checking motion preference
+
+The app checks your motion preference on startup:
+
+```typescript
+// From motion-preferences.ts:38-43
+export function getActiveMotionPreference() {
+  if (!activePreference) {
+    activePreference = readFromStorage();
+  }
+  return activePreference;
+}
+```
+
+Motion is **enabled by default**. If you prefer calmer visuals, use the **Low motion** quality preset or disable motion in the system check panel.
+
+### Setting motion preference
+
+You can update your motion preference from the system check panel:
+
+<Steps>
+<Step title="Open the system check">
+
+On the homepage, scroll to **Check your device** and click **Open full system check**.
+
+</Step>
+
+<Step title="Toggle low-motion mode">
+
+Look for the **🫧 Comfort** readiness item. If your system prefers reduced motion, you'll see:
+
+```text
+Low-motion mode: System preference active
+```
+
+Otherwise, you can manually enable it in the performance panel.
+
+</Step>
+
+<Step title="Preference persists">
+
+Your choice is saved to `localStorage`:
+
+```typescript
+// From motion-preferences.ts:9
+const MOTION_PREFERENCE_KEY = 'stims:motion-enabled';
+```
+
+It applies across all toys on this device.
+
+</Step>
+</Steps>
+
+## Quality presets for comfort
+
+The settings panel includes a **Low motion** quality preset that reduces particle density and shimmer:
+
+```typescript
+// From settings-panel.ts:22-28
+{
+  id: 'low-motion',
+  label: 'Low motion',
+  description: 'Reduce particle density and shimmer for calmer motion.',
+  maxPixelRatio: 1.5,
+  renderScale: 0.95,
+  particleScale: 0.5,
+}
+```
+
+### Available presets
+
+<Accordion title="Battery saver">
+
+- **Max pixel ratio**: 1.25x
+- **Render scale**: 0.9x
+- **Particle scale**: 0.65x
+- **Use case**: Older GPUs or devices with thermal constraints
+
+</Accordion>
+
+<Accordion title="Low motion">
+
+- **Max pixel ratio**: 1.5x
+- **Render scale**: 0.95x
+- **Particle scale**: 0.5x
+- **Use case**: Calmer visuals with reduced particle density and shimmer
+
+</Accordion>
+
+<Accordion title="TV balanced">
+
+- **Max pixel ratio**: 1.25x
+- **Render scale**: 0.9x
+- **Particle scale**: 0.75x
+- **Use case**: 10-foot viewing with lower DPI for steady frame pacing
+
+</Accordion>
+
+<Accordion title="Balanced (default)">
+
+- **Max pixel ratio**: 2x
+- **Render scale**: 1x
+- **Particle scale**: 1x
+- **Use case**: Native look for most laptops and desktops
+
+</Accordion>
+
+<Accordion title="Hi-fi visuals">
+
+- **Max pixel ratio**: 2.5x
+- **Render scale**: 1x
+- **Particle scale**: 1.35x
+- **Use case**: High-end GPUs; may increase thermal load
+
+</Accordion>
+
+## Reduced-motion detection
+
+The system reads your OS-level motion preference via `prefers-reduced-motion`:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  /* Disable animations */
+}
+```
+
+When detected, the system check panel displays:
+
+```text
+Reduced-motion preference detected. Low-motion preset is recommended.
+```
+
+## Accessibility features
+
+### Audio fallback options
+
+All audio-reactive toys support multiple input sources:
+
+- **Microphone**: Live input for responsive visuals
+- **Demo audio**: No permission needed, instant playback
+- **YouTube tab capture**: Shared audio source from a separate tab
+
+See the [Audio setup](/guides/audio-setup) guide for details.
+
+### Input flexibility
+
+Toys support multiple input methods:
+
+<Accordion title="Touch-first affordances">
+
+- Multi-touch gestures for pinch, rotate, and swipe
+- Touch-action defaults to prevent accidental scrolling
+- Control targets sized for reliable taps (minimum 44×44px)
+
+</Accordion>
+
+<Accordion title="Keyboard navigation">
+
+- All interactive controls are keyboard-accessible
+- Focus indicators for button and select elements
+- Arrow keys for some toys (e.g., Aurora Painter mood switching)
+
+</Accordion>
+
+<Accordion title="Screen reader support">
+
+- Semantic HTML with ARIA labels
+- Status messages announced via `aria-live` regions
+- Control panel headings and landmarks
+
+</Accordion>
+
+### Performance panel controls
+
+The performance panel provides granular control over rendering intensity:
+
+<Steps>
+<Step title="Pixel ratio cap">
+
+Limit resolution on high-DPI displays:
+
+```text
+Pixel ratio cap: 1.00x to 3.00x (default: 2.00x)
+```
+
+Lower values reduce GPU load.
+
+</Step>
+
+<Step title="Particle budget">
+
+Scale particle counts:
+
+```text
+Particle budget: 40% to 160% (default: 100%)
+```
+
+1.0 keeps default counts; lower values reduce motion intensity.
+
+</Step>
+
+<Step title="Shader quality">
+
+Choose shader complexity:
+
+- **Low (faster)**: Simplified shaders for older GPUs
+- **Balanced**: Default quality for most devices
+- **High (detailed)**: Full shader features for high-end GPUs
+
+</Step>
+</Steps>
+
+See the [Performance](/guides/performance) guide for detailed tuning instructions.
+
+## Sensory-friendly defaults
+
+Stims prioritizes sensory-friendly defaults:
+
+<Accordion title="Clear control surfaces">
+
+- All settings exposed in the control panel
+- No hidden keyboard shortcuts required to adjust intensity
+- Persistent settings across toys (stored in `localStorage`)
+
+</Accordion>
+
+<Accordion title="Fallback audio">
+
+- Demo audio available immediately (no permission gate)
+- Microphone errors surface with recovery guidance
+- YouTube tab capture for shared listening
+
+</Accordion>
+
+<Accordion title="Short, contained sessions">
+
+- Toys load fast (pooled renderer and audio services)
+- No forced onboarding or first-time tutorials
+- **← Back to library** link always visible in top-left
+
+</Accordion>
+
+<Accordion title="Motion comfort notes">
+
+The README includes this guidance:
+
+> **Motion comfort**: the system check and performance panel surface reduced-motion guidance and quality presets so you can dial in lower-intensity visuals.
+
+</Accordion>
+
+## System check readiness items
+
+The system check panel tracks four readiness categories:
+
+| Signal | Description |
+|--------|-------------|
+| 🖥️ **Graphics** | WebGL/WebGPU availability and fallback guidance |
+| 🎙️ **Mic** | Permission state, browser support, and demo audio fallback |
+| 🧭 **Motion** | Device orientation API for tilt controls |
+| 🫧 **Comfort** | Reduced-motion preference and low-motion preset recommendation |
+
+Each item displays a status dot (green/yellow/red) and a descriptive note.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Performance" icon="gauge" href="/guides/performance">
+    Adjust quality presets and pixel ratio for smooth playback
+  </Card>
+  <Card title="Playing toys" icon="gamepad" href="/guides/playing-toys">
+    Browse and launch toys from the library
+  </Card>
+</CardGroup>

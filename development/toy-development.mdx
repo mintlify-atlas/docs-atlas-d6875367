@@ -1,0 +1,378 @@
+---
+title: Toy Development Guide
+description: Create new interactive toys for the Stims library with proper lifecycle management and quality controls
+---
+
+## Overview
+
+This guide walks you through creating a new toy for the Stims Webtoys Library. Each toy is a self-contained module that exports a `start` function and integrates with the shared audio, rendering, and input systems.
+
+## Core Requirements
+
+When building a toy, follow these essential conventions:
+
+- Place new toy modules under `assets/js/toys/` and export a `start(options)` entry point
+- Export `start({ container, canvas?, audioContext? })` — `container` is the preferred target for rendering
+- Register the toy in `assets/data/toys.json` with a unique slug, label, and any default parameters
+- Load toys through `toy.html?toy=<slug>` or a dedicated HTML entry point
+- Keep assets (textures, JSON data, audio snippets) in `assets/data/` and reference them with relative paths
+- Run `bun run generate:toys` after metadata edits to regenerate derived artifacts
+- Run `bun run check:toys` to verify schema validity and consistency
+- Run `bun run check:quick` to validate types and code quality before opening a PR
+
+## Metadata Workflow
+
+The toy registry follows a source-of-truth pattern:
+
+**Authoritative metadata:** `assets/data/toys.json`
+
+**Generated from metadata:**
+- `assets/js/data/toy-manifest.ts`
+- `public/toys.json`
+
+**Regenerate generated artifacts:**
+```bash
+bun run generate:toys
+```
+
+**Validate no drift (CI/local):**
+```bash
+bun run check:toys
+```
+
+<Warning>
+If `bun run check:toys` reports drift, run `bun run generate:toys`, review the generated diffs, and commit all three files together.
+</Warning>
+
+## Toy Lifecycle Stages
+
+Treat toys like live game content with explicit lifecycle stages in `toys.json`:
+
+- **`prototype`**: New or experimental toys that need fast iteration
+- **`featured`**: Curated experiences that get the most attention and polish (5-8 toys max)
+- **`archived`**: Stable toys that stay available but are not actively promoted
+
+### Featured Rotation
+
+- Use `featuredRank` (lower = higher priority) to drive the default "Featured" sort
+- Revisit the featured set every 4-6 weeks
+- Schedule periodic quality passes on `featured` toys (monthly) and `prototype` toys (as needed)
+- Each pass should include performance verification, accessibility checks, and UI convention review
+
+## Quality Preset Guidelines
+
+Quality presets are global and persist across toys. Toys should respond consistently:
+
+- **Honor shared settings**: Call `toy.updateRendererSettings()` when settings change
+- **Avoid hard-coded pixel ratios**: Use preset-provided `maxPixelRatio` and `renderScale`
+- **Scale expensive effects**: Map presets to particle counts, post-processing strength, or shader iterations
+- **Battery saver preset**: Keep under ~65% of default costs
+- **Hi-fi visuals preset**: Increase costs modestly (~135%) without exceeding target frame times
+- **Persist in session**: Rely on shared settings panel so users don't reconfigure per toy
+
+### Custom Quality Presets
+
+Use custom presets only when a toy needs additional fidelity tiers:
+
+```typescript
+import { createToyQualityControls, type QualityPreset } from '../utils/toy-settings';
+
+const CUSTOM_PRESETS: QualityPreset[] = [
+  {
+    id: 'mobile',
+    label: 'Mobile saver',
+    description: 'Reduced pixel density and fewer particles for handheld GPUs.',
+    maxPixelRatio: 1.15,
+    renderScale: 0.85,
+    particleScale: 0.6,
+  },
+  // ...other presets
+];
+
+const { quality } = createToyQualityControls({
+  presets: CUSTOM_PRESETS,
+  defaultPresetId: 'mobile',
+  storageKey: 'stims:my-toy:quality',
+});
+```
+
+## Starter Template
+
+Use this skeleton for new toys to standardize lifecycle hooks and cleanup:
+
+```typescript toy-template.ts
+import WebToy, { type WebToyOptions } from '../core/web-toy';
+import type { ToyStartFunction } from '../core/toy-interface';
+
+export const start: ToyStartFunction = async ({ container, canvas, audioContext }) => {
+  const toy = new WebToy({
+    container,
+    canvas,
+    cameraOptions: { position: { z: 50 } },
+  });
+
+  // Example: Add a mesh
+  // const mesh = new Mesh(geometry, material);
+  // toy.scene.add(mesh);
+
+  function animate(time: number) {
+    if (!toy.renderer) return;
+    
+    // Update logic here
+    
+    toy.render();
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
+
+  return {
+    dispose: () => {
+      toy.dispose();
+      // Clean up other resources
+    },
+    // Optional: add methods to control the toy
+    // updateOptions: (options) => { ... },
+  };
+}
+```
+
+## Adding a New Toy: Step-by-Step
+
+<Steps>
+  <Step title="Pick a slug">
+    Choose a short, kebab-case slug (e.g., `pocket-pulse`) that becomes the `toy.html?toy=<slug>` route.
+  </Step>
+
+  <Step title="Scaffold the module (recommended)">
+    Use the scaffold script to automate setup:
+    
+    ```bash
+    bun run scripts/scaffold-toy.ts --slug pocket-pulse --title "Pocket Pulse" --type module --with-test
+    ```
+    
+    This creates:
+    - `assets/js/toys/<slug>.ts` with typed `ToyStartFunction` starter
+    - Metadata entry in `assets/data/toys.json`
+    - Updated `docs/TOY_SCRIPT_INDEX.md`
+    - Minimal test in `tests/`
+    
+    After scaffolding, add a short entry to `docs/toys.md` for contributor notes.
+  </Step>
+
+  <Step title="Manual alternative (if skipping scaffold)">
+    If you skip the scaffold script:
+    
+    1. Create `assets/js/toys/<slug>.ts` and export `start({ container, canvas?, audioContext? })`
+    2. Add entry to `assets/data/toys.json` (include `title`, `description`, `module`, `type`, `lifecycleStage`)
+    3. Add slug row to `docs/TOY_SCRIPT_INDEX.md`
+    4. Add short section to `docs/toys.md`
+    5. Create `toys/<slug>.html` only if using a standalone page
+  </Step>
+
+  <Step title="Wire the runtime">
+    Use `createToyRuntimeStarter` or `createToyRuntime` for audio, renderer, input, and settings panel behavior:
+    
+    ```typescript
+    import { createToyRuntimeStarter } from '../utils/toy-runtime-starter';
+    
+    const startRuntime = createToyRuntimeStarter({
+      toyOptions: {
+        cameraOptions: { position: { x: 0, y: 0, z: 24 } },
+        sceneOptions: { background: '#050611' },
+      },
+      audio: { fftSize: 256 },
+      input: { touchAction: 'manipulation' },
+      plugins: [
+        {
+          name: 'my-toy',
+          setup: (runtime) => {
+            // Initialize scene objects
+          },
+          update: ({ frequencyData, time, input }) => {
+            // Animation loop
+          },
+          dispose: () => {
+            // Cleanup
+          },
+        },
+      ],
+    });
+    ```
+    
+    Keep all DOM work scoped to the provided `container`.
+  </Step>
+
+  <Step title="Verify locally">
+    Run `bun run dev` and load `http://localhost:5173/toy.html?toy=<slug>` to confirm the toy loads, starts audio, and cleans up on exit.
+  </Step>
+
+  <Step title="Run quality checks">
+    Before opening a PR:
+    
+    ```bash
+    bun run check:toys   # Metadata, modules, HTML sync
+    bun run check        # Biome + typecheck + tests
+    ```
+  </Step>
+
+  <Step title="Manual spot-checks">
+    - Confirm "Back to Library" control returns to grid and removes DOM nodes
+    - Verify microphone permission flows (granted, denied, sample-audio fallback)
+    - For WebGPU toys, test in both WebGPU-capable and non-WebGPU browsers
+    - Test on mobile devices or emulators for touch interactions
+  </Step>
+
+  <Step title="Document special controls">
+    Add inline comments in your module or a short note in `README.md` if controls differ from other toys.
+  </Step>
+</Steps>
+
+## Audio Reactivity Tips
+
+### Normalizing Microphone Input
+
+Use analyzer helpers to derive frequency bins, waveform data, and energy levels:
+
+```typescript
+import { getBandAverage } from '../utils/audio-bands';
+import { getWeightedAverageFrequency } from '../utils/audio-handler';
+
+function animate(data: Uint8Array, time: number) {
+  const avg = getWeightedAverageFrequency(data) / 255;
+  const bass = getBandAverage(data, 0, 0.28) / 255;
+  const mids = getBandAverage(data, 0.28, 0.7) / 255;
+  const treble = getBandAverage(data, 0.7, 1) / 255;
+  
+  // Use bands to drive visuals
+}
+```
+
+### Microphone Permission Flow
+
+Reuse the centralized UI helper for mic access:
+
+```typescript
+import { setupMicrophonePermissionFlow } from '../core/microphone-flow';
+
+setupMicrophonePermissionFlow({
+  startButton: document.getElementById('start-audio-btn'),
+  fallbackButton: document.getElementById('use-demo-audio'),
+  statusElement: document.getElementById('audio-status'),
+  requestMicrophone: () => startToyAudio(toy, animate),
+  requestSampleAudio: () =>
+    startToyAudio(toy, animate, { fallbackToSynthetic: true }),
+});
+```
+
+**Manual scenarios to verify:**
+- **Granted**: Start audio shows success, sample-audio action hidden
+- **Denied/timed out**: Status shows error, sample-audio action visible
+
+<Tip>
+Consider a short attack/decay envelope to smooth sudden audio spikes for more polished visuals.
+</Tip>
+
+## Rendering Patterns
+
+- Keep animation state outside Three.js objects where possible
+- Mutate objects inside a `tick` loop driven by `requestAnimationFrame`
+- Throttle expensive operations on resize
+- Use `maxPixelRatio` option to keep frame times stable on high-DPI screens
+- Reuse materials and geometries instead of recreating each frame
+- Dispose buffers and textures in the cleanup function:
+
+```typescript
+import { disposeGeometry, disposeMaterial } from '../utils/three-dispose';
+
+function cleanup() {
+  if (mesh) {
+    scene.remove(mesh);
+    disposeGeometry(mesh.geometry);
+    disposeMaterial(mesh.material);
+  }
+}
+```
+
+## Mobile and Interaction
+
+- Test on touch devices or emulators — avoid hover-only interactions
+- Gate device motion logic behind feature detection (`window.DeviceMotionEvent`)
+- Ensure controls are keyboard-focusable with visible focus states
+- Use `.control-panel__mode` for custom buttons to guarantee 44×44px touch targets
+- Normalize pointer handling with `assets/js/utils/pointer-input.ts`:
+
+```typescript
+import { createToyRuntimeStarter } from '../utils/toy-runtime-starter';
+
+const startRuntime = createToyRuntimeStarter({
+  input: {
+    touchAction: 'manipulation',
+    onInput: (state) => {
+      // state.normalizedCentroid, state.gesture, etc.
+    },
+  },
+  // ...
+});
+```
+
+- Apply `.toy-canvas` class to fullscreen canvases
+- Include viewport meta tag: `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`
+- Test at common breakpoints: 320×568, 375×812, 768×1024
+
+## Debugging Checklist
+
+<AccordionGroup>
+  <Accordion title="Visuals are blank">
+    - Confirm canvas is attached to DOM
+    - Check renderer size matches `clientWidth`/`clientHeight`
+    - Verify camera position and lookAt target
+    - Check scene contains visible objects
+  </Accordion>
+
+  <Accordion title="Audio-driven behavior seems off">
+    - Log analyzer samples to verify data ranges
+    - Check microphone permissions in browser
+    - Verify `fftSize` matches expected frequency resolution
+    - Test with demo audio to isolate mic issues
+  </Accordion>
+
+  <Accordion title="Toy doesn't appear in selection UI">
+    - Validate entry in `assets/data/toys.json`
+    - Run `bun run generate:toys` to regenerate manifest
+    - Visit `toy.html?toy=<slug>` directly to test loading
+  </Accordion>
+</AccordionGroup>
+
+## Settings Panel Checklist
+
+When exposing toy-specific controls:
+
+- **Quality controls**: Respond to shared presets; expose additional toggles only when necessary
+- **Audio controls**: Surface mic/demo audio status; avoid conflicting with shell-level controls
+- **Performance cues**: Note performance-impacting toggles with helper text (e.g., "Lower GPU load")
+- **Accessibility**: Keep controls keyboard-focusable, label every toggle, maintain visible focus styles
+
+## Documentation
+
+- Update `README.md` and `CONTRIBUTING.md` if introducing new scripts or global expectations
+- Describe user-facing controls in the HTML entry point if they deviate from patterns
+- Include inline comments for novel shader parameters, math tricks, or input quirks
+- When wrapping HTML pages, expose through `startPageToy` and add slug to `assets/data/toys.json`
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Toy Interface" icon="code" href="/development/toy-interface">
+    Learn about TypeScript interfaces for toy lifecycle
+  </Card>
+  <Card title="Testing Toys" icon="flask" href="/development/testing-toys">
+    Write automated tests for your toy
+  </Card>
+  <Card title="Toy Manifest" icon="file-code" href="/development/toy-manifest">
+    Understand toys.json structure and metadata
+  </Card>
+  <Card title="Audio System" icon="waveform-lines" href="/architecture/audio-system">
+    Deep dive into audio analysis utilities
+  </Card>
+</CardGroup>

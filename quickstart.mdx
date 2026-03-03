@@ -1,80 +1,211 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get up and running with Stim Webtoys in minutes
 ---
 
-## Get started in three steps
+## Get started with Stim Webtoys
 
-Get your documentation site running locally and make your first customization.
+This guide will help you install dependencies, start the dev server, and open your first toy locally.
 
-### Step 1: Set up your local environment
+<Note>
+  The Stim Webtoys Library uses **Bun 1.3+** as the package manager and runtime. Make sure you have Bun installed before proceeding.
+</Note>
+
+## Prerequisites
+
+Before you begin, you'll need:
+
+- **Bun 1.3+**: Install from [bun.sh](https://bun.sh/) for the fastest install/test cycle
+- **A modern web browser**: Chrome, Firefox, Edge, or Safari with WebGL support
+- **Git**: To clone the repository
+
+<Info>
+  The repository records `bun@1.3.8` in `package.json` via the `packageManager` field for reproducible installs.
+</Info>
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Stim Webtoys repository and navigate into the directory:
+
+    ```bash
+    git clone https://github.com/zz-plant/stims.git
+    cd stims
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required dependencies using Bun:
+
+    ```bash
+    bun install
+    ```
+
+    The repository tracks `bun.lock` for reproducible installs. If you need to respect the lockfile exactly (for CI or debugging):
+
+    ```bash
+    bun install --frozen-lockfile
+    ```
+
+    <Info>
+      Bun does not automatically run `prepare` scripts, so the repo includes a `postinstall` hook that installs Husky when `npm_config_user_agent` starts with `bun`.
+    </Info>
+  </Step>
+
+  <Step title="Start the dev server">
+    Launch the development server:
+
+    ```bash
+    bun run dev
+    ```
+
+    The server will start on `http://localhost:5173`. Open this URL in your browser to see the toy library.
+
+    <Tip>
+      Use `bun run dev:host` when you need the server bound to all interfaces for mobile/LAN testing.
+    </Tip>
+  </Step>
+
+  <Step title="Open a toy">
+    Once the dev server is running, you can:
+
+    - **Visit the landing page**: `http://localhost:5173` to browse all toys
+    - **Open a specific toy**: `http://localhost:5173/toy.html?toy=spiral-burst`
+    - **Try the toy index**: `http://localhost:5173/toy.html`
+
+    <Note>
+      Your browser may prompt for microphone access. Grant permission to enable audio-reactive features, or click the demo audio option to explore without a mic.
+    </Note>
+  </Step>
+</Steps>
+
+## Development workflows
+
+### Serve a production build
+
+To test a production build locally:
+
+<CodeGroup>
+
+```bash Build and preview
+bun run build
+bun run preview
+```
+
+```bash Serve dist directly
+bun run build
+bun run serve:dist
+```
+
+</CodeGroup>
+
+The preview server hosts the contents of `dist/` on port `4173` using Vite's `--host` flag, so you can load the build from other devices on your LAN.
+
+### WebGPU development
+
+If you need a WebGPU-focused local session:
+
+```bash
+bun run dev:webgpu
+```
+
+This launches Chromium with WebGPU-friendly flags against a localhost dev server.
+
+### Mobile and LAN testing
+
+To test on mobile devices or other machines on your network:
+
+```bash
+bun run dev:host
+```
+
+This binds the dev server to all interfaces. Connect from other devices using `http://<your-ip>:5173`.
+
+## Common commands
+
+Here are the most useful commands for day-to-day development:
+
+| Task | Command | Description |
+| --- | --- | --- |
+| Start dev server | `bun run dev` | Launch Vite dev server on localhost |
+| Start dev server (LAN) | `bun run dev:host` | Bind to all interfaces for device testing |
+| Build for production | `bun run build` | Create optimized build in `dist/` |
+| Preview build | `bun run preview` | Serve production build locally |
+| Run tests | `bun run test` | Execute Bun test suite |
+| Lint code | `bun run lint` | Check code quality with Biome |
+| Format code | `bun run format` | Auto-format with Biome |
+| Type check | `bun run typecheck` | Run TypeScript type checker |
+| Full quality check | `bun run check` | Run lint, typecheck, and tests |
+
+<Info>
+  All JavaScript dependencies are bundled locally with Vite, so everything works offline without hitting a CDN.
+</Info>
+
+## Troubleshooting
+
+### Microphone permissions
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="Browser denied microphone access">
+    If the browser denied microphone access, re-allow it via the address bar/site settings and click the start button again. Hard-refreshing the page will re-trigger the prompt on most browsers.
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+
+  <Accordion title="Use demo audio instead">
+    Switch to demo audio if you keep seeing timeouts or "blocked" errors—the UI exposes a fallback button for a pre-mixed track so you can keep exploring without mic input.
+  </Accordion>
+
+  <Accordion title="YouTube audio option">
+    Use the YouTube audio option on `toy.html` to paste a video link and capture tab audio when you want a shared playback source instead of live mic input.
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+### WebGPU gating
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Warning>
+  A WebGPU fallback warning means the browser lacked a compatible adapter or device at startup; toys will fall back to WebGL when possible.
+</Warning>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+- To force a retry (for example, after toggling a browser flag or switching GPUs), refresh the page—WebGPU detection resets and will attempt the adapter/device handshake again.
+- WebGPU-only toys (like `multi`) won't run without WebGPU; expect them to stay idle or prompt you to pick another toy until the capability probe succeeds.
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+### Module loading issues
 
-### Step 3: Go live
+<Warning>
+  Opening HTML files directly won't work. The TypeScript modules and JSON fetches require an HTTP server.
+</Warning>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Always use `bun run dev`, `bun run preview`, or another static host—never load toys over `file://`.
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card
+    title="Browse toys"
+    icon="grid"
+    href="/toys/overview"
+  >
+    Explore the full collection of toys and their features
+  </Card>
+  <Card
+    title="Audio setup"
+    icon="microphone"
+    href="/guides/audio-setup"
+  >
+    Learn about microphone permissions and audio sources
+  </Card>
+  <Card
+    title="Performance tips"
+    icon="gauge"
+    href="/guides/performance"
+  >
+    Optimize quality settings for your device
+  </Card>
+  <Card
+    title="Development guide"
+    icon="code"
+    href="/contributing/development-setup"
+  >
+    Set up your environment for contributing
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

@@ -1,0 +1,483 @@
+---
+title: Testing Toys
+description: Write automated tests for toy lifecycle, cleanup, and utilities using Bun and happy-dom
+---
+
+## Overview
+
+This guide covers how to write automated tests for stim toys using the Bun test runner and shared test helpers. Tests focus on **repeatable lifecycle checks** and remain **headless** (no browser required) using happy-dom for DOM simulation.
+
+## Goals
+
+- Validate toy lifecycle behavior (start, render/update, cleanup)
+- Keep tests headless (Bun + happy-dom) and deterministic
+- Favor fast, isolated tests for pure helpers and rendering utilities
+
+## What Already Exists
+
+The repo ships with shared helpers in `tests/toy-test-helpers.ts` and a working example spec in `tests/sample-toy.test.ts`.
+
+### Shared Test Helpers
+
+#### `createToyContainer(id?)`
+
+Creates and appends a container to `document.body`:
+
+```typescript
+import { createToyContainer } from './toy-test-helpers';
+
+const { container, dispose } = createToyContainer('my-toy-root');
+// Use container for testing
+dispose(); // Removes container from DOM
+```
+
+<ParamField path="id" type="string" default="'toy-container'">
+  Optional ID for the container element.
+</ParamField>
+
+**Returns:**
+- `container`: `HTMLDivElement` — The created container element
+- `dispose`: `() => void` — Function to remove container from DOM
+
+#### `FakeAudioContext`
+
+Lightweight fake `AudioContext` for testing:
+
+```typescript
+import { FakeAudioContext } from './toy-test-helpers';
+
+const audioContext = new FakeAudioContext();
+const analyser = audioContext.createAnalyser();
+
+await audioContext.close();
+console.log(audioContext.closed); // true
+```
+
+**Properties:**
+- `closed`: `boolean` — Tracks if `close()` was called
+- `analyzersCreated`: `number` — Count of analyzers created
+
+**Methods:**
+- `createAnalyser()`: Returns `FakeAnalyserNode`
+- `close()`: Marks context as closed (async)
+
+#### `FakeAnalyserNode`
+
+Stub analyzer node:
+
+```typescript
+const analyser = audioContext.createAnalyser();
+const samples = new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(samples);
+// samples filled with 128
+```
+
+**Properties:**
+- `frequencyBinCount`: `number` — Number of frequency bins (default: 16)
+- `connected`: `boolean` — Tracks connection state
+
+**Methods:**
+- `connect()`: Marks as connected
+- `disconnect()`: Marks as disconnected  
+- `getByteFrequencyData(array)`: Fills array with 128
+
+#### `createMockRenderer()`
+
+Provides a stub renderer with spies:
+
+```typescript
+import { createMockRenderer } from './toy-test-helpers';
+
+const renderer = createMockRenderer();
+renderer.renderFrame({ frame: 1 });
+renderer.renderFrame({ frame: 2 });
+
+expect(renderer.render).toHaveBeenCalledTimes(2);
+expect(renderer.render).toHaveBeenLastCalledWith({ frame: 2 });
+```
+
+**Returns:**
+- `render`: Mock function
+- `dispose`: Mock function
+- `renderFrame`: Wrapper around `render`
+
+## Test Patterns
+
+### Pattern 1: Module Toys (Default)
+
+Use this pattern for toys that export `start({ container, canvas?, audioContext? })` and return a cleanup function:
+
+```typescript module-toy.test.ts
+import { describe, expect, test } from 'bun:test';
+import { start } from '../assets/js/toys/my-toy.ts';
+import { createToyContainer, FakeAudioContext } from './toy-test-helpers.ts';
+
+describe('my-toy', () => {
+  test('starts and cleans up', async () => {
+    const { container, dispose } = createToyContainer('my-toy-root');
+    const audioContext = new FakeAudioContext();
+
+    const cleanup = start({ container, audioContext });
+
+    expect(typeof cleanup).toBe('function');
+    expect(container.childElementCount).toBeGreaterThan(0);
+
+    await cleanup();
+
+    expect(container.childElementCount).toBe(0);
+    expect(audioContext.closed).toBe(true);
+
+    dispose();
+  });
+});
+```
+
+<Tip>
+If a toy returns `{ dispose() }` instead of a cleanup function, wrap it:
+
+```typescript
+const instance = start({ container, audioContext });
+await instance.dispose();
+```
+</Tip>
+
+### Pattern 2: Page Toys (startPageToy wrappers)
+
+For toys using the page wrapper, assert that status UI mounts and unmounts:
+
+```typescript page-toy.test.ts
+import { expect, test } from 'bun:test';
+import { start } from '../assets/js/toys/holy.ts';
+
+test('page toy mounts and disposes status UI', () => {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+
+  const activeToy = start({ container });
+  expect(container.querySelector('.active-toy-status')).not.toBeNull();
+
+  activeToy.dispose();
+  expect(container.querySelector('.active-toy-status')).toBeNull();
+});
+```
+
+### Pattern 3: Helper Utilities
+
+When testing pure functions (color math, easing, audio utilities):
+
+```typescript audio-bands.test.ts
+import { describe, expect, test } from 'bun:test';
+import { getBandAverage } from '../assets/js/utils/audio-bands';
+
+describe('getBandAverage', () => {
+  test('calculates average for frequency band', () => {
+    const data = new Uint8Array([100, 150, 200, 250]);
+    const avg = getBandAverage(data, 0, 0.5); // First half
+    
+    expect(avg).toBe(125); // (100 + 150) / 2
+  });
+  
+  test('handles empty band gracefully', () => {
+    const data = new Uint8Array([100, 150]);
+    const avg = getBandAverage(data, 0.8, 1); // Beyond range
+    
+    expect(avg).toBe(0);
+  });
+});
+```
+
+## Complete Example Test
+
+Here's the full example from `tests/sample-toy.test.ts`:
+
+```typescript sample-toy.test.ts
+import { afterEach, describe, expect, test } from 'bun:test';
+import { start as startDemoToy } from './demo-toy.ts';
+import {
+  createMockRenderer,
+  createToyContainer,
+  FakeAudioContext,
+} from './toy-test-helpers.ts';
+
+describe('toy harness example', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  test('runs demo toy with shared stubs and cleans up DOM', async () => {
+    const baselineBodyChildren = document.body.childElementCount;
+    const { container, dispose } = createToyContainer('demo-toy-root');
+    const audioContext = new FakeAudioContext();
+
+    const cleanup = startDemoToy({ container, audioContext });
+
+    expect(typeof cleanup).toBe('function');
+    expect(
+      container.querySelector('[data-toy-mount="demo-toy"]'),
+    ).not.toBeNull();
+
+    await cleanup();
+
+    expect(container.childElementCount).toBe(0);
+    expect(document.querySelector('[data-toy-mount="demo-toy"]')).toBeNull();
+    expect(document.body.childElementCount).toBe(baselineBodyChildren + 1);
+    expect(audioContext.closed).toBe(true);
+
+    dispose();
+    expect(document.body.childElementCount).toBe(baselineBodyChildren);
+  });
+
+  test('exposes reusable helpers for analyzers and renderers', () => {
+    const renderer = createMockRenderer();
+    renderer.renderFrame({ frame: 1 });
+    renderer.renderFrame({ frame: 2 });
+
+    expect(renderer.render).toHaveBeenCalledTimes(2);
+    expect(renderer.render).toHaveBeenLastCalledWith({ frame: 2 });
+
+    const audioContext = new FakeAudioContext();
+    const analyser = audioContext.createAnalyser();
+    const samples = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(samples);
+
+    expect(Array.from(samples)).toEqual(
+      new Array(analyser.frequencyBinCount).fill(128),
+    );
+  });
+});
+```
+
+## Testing Cleanup Behavior
+
+Always verify that toys clean up properly:
+
+<Steps>
+  <Step title="Check DOM cleanup">
+    ```typescript
+    expect(container.childElementCount).toBe(0);
+    ```
+  </Step>
+  
+  <Step title="Verify audio context closure">
+    ```typescript
+    expect(audioContext.closed).toBe(true);
+    ```
+  </Step>
+  
+  <Step title="Confirm event listeners removed">
+    ```typescript
+    // Trigger event after disposal
+    window.dispatchEvent(new Event('resize'));
+    // Verify handler didn't run (check side effects)
+    ```
+  </Step>
+  
+  <Step title="Check animation loops stopped">
+    ```typescript
+    const initialFrameCount = getFrameCount();
+    await cleanup();
+    await sleep(100); // Wait for potential frames
+    expect(getFrameCount()).toBe(initialFrameCount);
+    ```
+  </Step>
+</Steps>
+
+## Mocking Time and Random
+
+Keep tests deterministic by mocking time-based functions:
+
+```typescript
+import { beforeEach, afterEach, mock } from 'bun:test';
+
+let mockTime = 0;
+const originalPerformanceNow = performance.now;
+
+beforeEach(() => {
+  mockTime = 0;
+  performance.now = mock(() => mockTime);
+  Math.random = mock(() => 0.5); // Fixed random
+});
+
+afterEach(() => {
+  performance.now = originalPerformanceNow;
+});
+
+test('animation respects time', () => {
+  mockTime = 1000;
+  animate();
+  expect(object.position.x).toBe(50); // Predictable based on time
+  
+  mockTime = 2000;
+  animate();
+  expect(object.position.x).toBe(100);
+});
+```
+
+## Testing Audio Reactivity
+
+Simulate frequency data:
+
+```typescript
+import { FakeAnalyserNode } from './toy-test-helpers';
+
+class CustomAnalyser extends FakeAnalyserNode {
+  constructor(private data: number[]) {
+    super(data.length);
+  }
+  
+  getByteFrequencyData(array: Uint8Array) {
+    array.set(this.data);
+  }
+}
+
+test('toy reacts to bass frequencies', () => {
+  const bassHeavyData = [200, 180, 160, 50, 30, 20, 10, 5];
+  const analyser = new CustomAnalyser(bassHeavyData);
+  
+  const frequencyData = new Uint8Array(8);
+  analyser.getByteFrequencyData(frequencyData);
+  
+  animate(frequencyData, 0);
+  
+  // Assert visual state reflects bass-heavy input
+  expect(particleSize).toBeGreaterThan(1.5);
+});
+```
+
+## Smoke Checks for Metadata
+
+If you change the toy registry, consider testing metadata consistency:
+
+```typescript toys-metadata.test.ts
+import { describe, expect, test } from 'bun:test';
+import toys from '../assets/data/toys.json';
+
+describe('toy metadata', () => {
+  test('all toys have required fields', () => {
+    for (const toy of toys) {
+      expect(toy.slug).toBeTruthy();
+      expect(toy.title).toBeTruthy();
+      expect(toy.module).toMatch(/^assets\/js\/toys\//);
+      expect(['module', 'page']).toContain(toy.type);
+    }
+  });
+  
+  test('featured toys have featuredRank', () => {
+    const featured = toys.filter(t => t.lifecycleStage === 'featured');
+    for (const toy of featured) {
+      expect(toy.featuredRank).toBeGreaterThan(0);
+    }
+  });
+});
+```
+
+<Note>
+The `scripts/check-toys.ts` script already covers most metadata validation. Add tests for custom validation logic specific to your project.
+</Note>
+
+## Running Tests
+
+### Run all tests
+
+```bash
+bun run test
+```
+
+### Run specific test file
+
+```bash
+bun test tests/my-toy.test.ts
+```
+
+### Watch mode
+
+```bash
+bun test --watch
+```
+
+### Run with coverage
+
+```bash
+bun test --coverage
+```
+
+## Verification Checklist
+
+Before marking a toy test complete:
+
+- [ ] The new spec reuses helpers from `tests/toy-test-helpers.ts`
+- [ ] Cleanup removes toy-added DOM nodes
+- [ ] Cleanup closes the fake audio context when applicable
+- [ ] Test is deterministic (no flaky timing issues)
+- [ ] `bun run check` passes (lint, typecheck, and tests)
+
+## Integration with CI
+
+Tests run automatically in CI via `bun run check`:
+
+```yaml .github/workflows/test.yml
+name: Test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep tests fast">
+    - Avoid real timers (`setTimeout`, `setInterval`) — use mocks
+    - Don't load real assets (textures, models) — use stubs
+    - Keep setup/teardown minimal
+    - Target under 100ms per test
+  </Accordion>
+  
+  <Accordion title="Test behavior, not implementation">
+    - Focus on public API (`start`, `dispose`, exported functions)
+    - Don't test internal private methods
+    - Assert on observable outcomes (DOM state, visual state)
+    - Avoid brittle assertions on exact internal values
+  </Accordion>
+  
+  <Accordion title="Isolate tests">
+    - Clean up global state in `afterEach`
+    - Don't share mutable state between tests
+    - Use fresh containers and contexts per test
+    - Reset `document.body.innerHTML = ''` after each test
+  </Accordion>
+  
+  <Accordion title="Write descriptive test names">
+    ```typescript
+    // Good
+    test('disposes Three.js meshes and removes canvas from DOM')
+    test('pauses animation loop when pause() called')
+    
+    // Avoid
+    test('cleanup works')
+    test('test pause')
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Toy Development" icon="hammer" href="/development/toy-development">
+    Build new toys with proper lifecycle
+  </Card>
+  <Card title="Toy Interface" icon="code" href="/development/toy-interface">
+    Learn about TypeScript interfaces
+  </Card>
+  <Card title="Code Quality" icon="shield-check" href="/contributing/code-quality">
+    Biome, TypeScript, and quality checks
+  </Card>
+  <Card title="CI/CD" icon="gears" href="/deployment/overview">
+    Deployment and automation
+  </Card>
+</CardGroup>

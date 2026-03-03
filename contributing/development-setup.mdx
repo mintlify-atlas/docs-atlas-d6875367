@@ -1,0 +1,339 @@
+---
+title: Development Setup
+description: Set up your local development environment for Stims
+---
+
+## Toolchain Baseline
+
+The Stim Webtoys Library uses a modern JavaScript toolchain:
+
+- **Package manager/runtime**: Bun 1.3+ (`bun@1.3.8` pinned in `package.json`)
+- **Build/dev server**: Vite
+- **Lint + format**: Biome
+- **Typecheck**: TypeScript (`tsc --noEmit`)
+- **Tests**: Bun test with preload/importmap wiring
+- **Deploy tooling**: Wrangler for Cloudflare Pages
+
+## Prerequisites
+
+<Note>
+  Node is supported for fallback script execution (`engines.node: ^22`), but **use Bun for installs and scripts**.
+</Note>
+
+### Installing Bun
+
+Install Bun 1.3 or higher from [bun.sh](https://bun.sh/):
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+Verify your installation:
+
+```bash
+bun --version
+```
+
+## Installation
+
+### Clone and Install
+
+```bash
+git clone https://github.com/zz-plant/stims.git
+cd stims
+bun install
+```
+
+### Installing Dependencies
+
+<CodeGroup>
+
+```bash Standard Install
+# Regular install (updates lockfile if needed)
+bun install
+```
+
+```bash CI/Reproducible Install
+# Frozen lockfile install (for CI)
+bun install --frozen-lockfile
+```
+
+</CodeGroup>
+
+The repository tracks `bun.lock`. Use `bun install --frozen-lockfile` in CI or other reproducible-install contexts where lockfile changes must be disallowed.
+
+## Core Development Commands
+
+### Dev Server
+
+<CodeGroup>
+
+```bash Local Development
+# Start dev server
+bun run dev
+# Open http://localhost:5173
+```
+
+```bash LAN Testing
+# Start dev server on LAN for device testing
+bun run dev:host
+```
+
+```bash WebGPU Development
+# Launch localhost Vite + Chromium with WebGPU flags
+bun run dev:webgpu
+```
+
+</CodeGroup>
+
+<Note>
+  Use `bun run dev:host` when you need the server bound to all interfaces for mobile/LAN testing.
+</Note>
+
+### Building
+
+<CodeGroup>
+
+```bash Production Build
+# Create production build
+bun run build
+```
+
+```bash Preview Build
+# Preview production build locally
+bun run preview
+```
+
+```bash Serve Build
+# Serve dist/ directory directly
+bun run serve:dist
+```
+
+</CodeGroup>
+
+### Build Output
+
+The production build outputs to `dist/`. Preview the build on `http://localhost:4173` using Vite's preview server with the `--host` flag for LAN testing.
+
+## Development Workflows
+
+### Golden-Path Recipe: JS/TS Feature
+
+<Steps>
+  <Step title="Start Dev Server">
+    ```bash
+    bun run dev
+    ```
+  </Step>
+
+  <Step title="Implement Change">
+    Make your code changes while the dev server is running.
+  </Step>
+
+  <Step title="Run Quality Checks">
+    ```bash
+    bun run check
+    ```
+
+    For faster iteration, use `bun run check:quick` until final validation.
+  </Step>
+</Steps>
+
+### Golden-Path Recipe: Add/Rename Toy
+
+<Steps>
+  <Step title="Start Dev Server">
+    ```bash
+    bun run dev
+    ```
+  </Step>
+
+  <Step title="Implement Toy">
+    Create or modify:
+    - Toy implementation in `assets/js/toys/`
+    - Toy metadata in `assets/data/toys.json`
+    - Standalone page in `toys/` for page-backed toys
+    - Update docs: `docs/TOY_DEVELOPMENT.md`, `docs/TOY_SCRIPT_INDEX.md`, `docs/toys.md`
+    - Tests in `tests/` where behavior changed
+  </Step>
+
+  <Step title="Run Quality Checks">
+    ```bash
+    bun run check
+    bun run check:toys
+    ```
+  </Step>
+</Steps>
+
+### Golden-Path Recipe: Pages Deployment
+
+<Steps>
+  <Step title="Quality Check">
+    ```bash
+    bun run check
+    ```
+  </Step>
+
+  <Step title="Build">
+    ```bash
+    bun run build
+    ```
+  </Step>
+
+  <Step title="Test Locally">
+    ```bash
+    bun run pages:dev
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    bun run pages:deploy
+    ```
+
+    Or use `bun run pages:deploy:reuse` when deploying a build you already verified.
+  </Step>
+</Steps>
+
+## Cloudflare Pages Workflows
+
+<CodeGroup>
+
+```bash Local Pages Dev
+# Build first, then run Wrangler Pages locally
+bun run pages:dev
+```
+
+```bash Deploy Pages
+# Build + deploy sequence
+bun run pages:deploy
+```
+
+```bash Deploy Reusing Build
+# Faster deploy loop if build already available
+bun run pages:deploy:reuse
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+### Microphone Permissions
+
+- If the browser denied microphone access, re-allow it via the address bar/site settings and click the start button again
+- Hard-refreshing the page will re-trigger the prompt on most browsers
+- Switch to demo audio if you keep seeing timeouts or "blocked" errors
+- Use the YouTube audio option on `toy.html` to paste a video link and capture tab audio
+
+### WebGPU Gating
+
+- A WebGPU fallback warning means the browser lacked a compatible adapter or device at startup
+- Toys will fall back to WebGL when possible
+- To force a retry after toggling a browser flag or switching GPUs, refresh the page
+- WebGPU-only toys (like `multi`) won't run without WebGPU support
+
+### Dev-Server Hosting
+
+<Warning>
+  Avoid loading toys over `file://`. The modules and JSON fetches require an HTTP server, so always use the dev server, preview server, or another static host.
+</Warning>
+
+- Check the served port in the terminal output (Vite defaults to `5173`; preview uses `4173`)
+- Connect from other devices via `http://<your-ip>:<port>`
+
+### Common Issues
+
+| Issue | Solution |
+| --- | --- |
+| `bun run test` behaves differently from `bun test` | Always use `bun run test` so preload/importmap flags apply |
+| Formatting/lint drift | Run `bun run lint:fix` followed by `bun run format` |
+| Typecheck errors after dependency changes | Rerun `bun install` then `bun run typecheck` |
+| `check:toys` failures after renaming | Verify toy docs and metadata updates landed together |
+| Pages command failures locally | Verify Wrangler auth/context and rerun `bun run pages:dev` |
+| `navigator.gpu` missing during local testing | Run `bun run dev:webgpu` so Chromium starts with WebGPU flags |
+
+## Helpful Scripts Reference
+
+Here are all the key scripts from `package.json`:
+
+<CodeGroup>
+
+```bash Development
+bun run dev              # Start Vite dev server
+bun run dev:host         # Start dev server on LAN
+bun run dev:webgpu       # Launch with WebGPU flags
+bun run dev:check        # Dev smoke check (no browser)
+```
+
+```bash Building
+bun run build            # Production build
+bun run build:reuse      # Reuse prior build artifacts
+bun run preview          # Preview production build
+bun run serve:dist       # Serve dist/ directly
+```
+
+```bash Quality
+bun run check            # Full gate: lint + typecheck + tests
+bun run check:quick      # Quick gate: lint + typecheck only
+bun run lint             # Lint with Biome
+bun run lint:fix         # Lint + auto-fix with Biome
+bun run format           # Format with Biome
+bun run format:check     # Check formatting
+bun run typecheck        # TypeScript type checking
+bun run typecheck:watch  # Watch mode type checking
+```
+
+```bash Testing
+bun run test             # Run all tests
+bun run test:watch       # Run tests in watch mode
+bun run test:compat      # Compatibility-focused tests
+bun run test:agent       # Agent integration test
+```
+
+```bash Toys
+bun run check:toys       # Toy consistency check
+bun run health:toys      # Toy health diagnostics
+bun run play:toy         # Play specific toy
+```
+
+```bash SEO
+bun run generate:seo     # Generate SEO artifacts
+bun run check:seo        # Validate SEO artifacts
+```
+
+```bash Deployment
+bun run pages:dev        # Local Pages dev
+bun run pages:deploy     # Deploy to Pages
+bun run pages:deploy:reuse # Deploy reusing build
+```
+
+```bash MCP
+bun run mcp              # Start MCP server
+```
+
+</CodeGroup>
+
+## Repository Layout
+
+Understand the project structure:
+
+- `assets/js/toys/` - Individual toy implementations (e.g., `cube-wave.ts`, `spiral-burst.ts`)
+- `assets/js/core/` - Rendering and input helpers used by multiple toys
+- `assets/js/utils/` - Small utility modules supporting core helpers and toys
+- `assets/css/` - Shared styling for HTML entry points
+- `assets/data/` - Static data files consumed by toys (e.g., `toys.json`)
+- `tests/` - Bun specs validating core behaviors
+- `toy.html`, `brand.html`, etc. - Entry points loading specific toys or collections
+- `docs/` - Comprehensive project documentation
+- `scripts/` - Build, deployment, and utility scripts
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Code Quality" icon="check" href="/contributing/code-quality">
+    Learn about linting, formatting, and testing practices
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/contributing/getting-started">
+    Review the contribution guidelines
+  </Card>
+</CardGroup>

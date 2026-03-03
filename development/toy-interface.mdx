@@ -1,0 +1,439 @@
+---
+title: Toy Interface Reference
+description: TypeScript interfaces for toy lifecycle, start options, and instance methods
+---
+
+## Overview
+
+Every toy in the Stims library implements a standard interface that defines how it starts, runs, and cleans up. This page documents the exact TypeScript types exported from `assets/js/core/toy-interface.ts`.
+
+## ToyStartFunction
+
+The main entry point for a toy module. Each toy exports a `start` function that matches this signature:
+
+```typescript
+export type ToyStartFunction = (
+  options?: ToyStartOptions,
+) => Promise<ToyInstance> | ToyInstance;
+```
+
+**Key points:**
+- Can return either a `ToyInstance` directly or a `Promise<ToyInstance>`
+- Takes an optional `ToyStartOptions` parameter
+- Synchronous or asynchronous execution supported
+
+### Usage Example
+
+```typescript
+import type { ToyStartFunction } from '../core/toy-interface';
+
+export const start: ToyStartFunction = ({ container, canvas, audioContext }) => {
+  // Initialize your toy
+  
+  return {
+    dispose: () => {
+      // Clean up resources
+    },
+  };
+};
+```
+
+## ToyStartOptions
+
+Configuration object passed to the toy's `start` function:
+
+<ParamField path="container" type="HTMLElement | null" default="undefined">
+  The container element where the toy should render its canvas and UI.
+  
+  If not provided, the toy may default to full-screen behavior or throw an error depending on implementation.
+  
+  **Best practice:** Always use the provided `container` for DOM operations to ensure proper cleanup.
+</ParamField>
+
+<ParamField path="canvas" type="HTMLCanvasElement | null" default="undefined">
+  An optional existing canvas element to use for rendering.
+  
+  If provided, the toy should respect its size or the container's size. Most toys create their own canvas within the `container`.
+</ParamField>
+
+<ParamField path="audioContext" type="AudioContext" default="undefined">
+  Optional Web Audio API context to share across multiple toys or with the main app.
+  
+  Sharing a context allows audio to continue seamlessly when switching toys and avoids browser limits on concurrent audio contexts.
+</ParamField>
+
+### Complete Interface
+
+```typescript toy-interface.ts
+export interface ToyStartOptions {
+  /**
+   * The container element where the toy should render its canvas and UI.
+   * If not provided, the toy may default to a full-screen behavior or throw an error depending on implementation.
+   */
+  container?: HTMLElement | null;
+
+  /**
+   * An optional existing canvas to use. If provided, the toy should likely respect its size or the container's size.
+   */
+  canvas?: HTMLCanvasElement | null;
+
+  /**
+   * Optional AudioContext to share across multiple toys or with the main app.
+   */
+  audioContext?: AudioContext;
+}
+```
+
+## ToyInstance
+
+The object returned by a toy's `start` function. Defines methods for controlling and cleaning up the toy:
+
+<ResponseField name="dispose" type="() => void" required>
+  Cleans up all resources (audio, WebGL, event listeners).
+  
+  After calling this, the toy should not be used again.
+  
+  **Must be implemented.** This is the only required method on a `ToyInstance`.
+</ResponseField>
+
+<ResponseField name="pause" type="() => void">
+  Pauses the animation loop and audio processing.
+  
+  Optional. Implement this if your toy supports pausing without full disposal.
+</ResponseField>
+
+<ResponseField name="resume" type="() => void">
+  Resumes the animation loop and audio processing.
+  
+  Optional. Implement alongside `pause` for pause/resume support.
+</ResponseField>
+
+<ResponseField name="updateOptions" type="(options: Record<string, unknown>) => void">
+  Updates configuration parameters dynamically.
+  
+  Optional. Use this to allow external controls to modify toy behavior at runtime without restarting.
+</ResponseField>
+
+### Complete Interface
+
+```typescript toy-interface.ts
+export interface ToyInstance {
+  /**
+   * Cleans up all resources (audio, webgl, event listeners).
+   * After calling this, the toy should not be used again.
+   */
+  dispose(): void;
+
+  /**
+   * Optional: Pauses the animation loop and audio processing.
+   */
+  pause?(): void;
+
+  /**
+   * Optional: Resumes the animation loop and audio processing.
+   */
+  resume?(): void;
+
+  /**
+   * Optional: Updates configuration parameters dynamically.
+   */
+  updateOptions?(options: Record<string, unknown>): void;
+}
+```
+
+## Implementation Patterns
+
+### Basic Implementation
+
+Minimal toy with just `dispose`:
+
+```typescript
+import type { ToyStartFunction, ToyInstance } from '../core/toy-interface';
+
+export const start: ToyStartFunction = ({ container }): ToyInstance => {
+  const canvas = document.createElement('canvas');
+  container?.appendChild(canvas);
+  
+  let running = true;
+  
+  function animate() {
+    if (!running) return;
+    // Animation logic
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
+  
+  return {
+    dispose: () => {
+      running = false;
+      canvas.remove();
+    },
+  };
+};
+```
+
+### With Pause/Resume
+
+Toy that supports pausing:
+
+```typescript
+import type { ToyStartFunction, ToyInstance } from '../core/toy-interface';
+
+export const start: ToyStartFunction = ({ container }): ToyInstance => {
+  let animationId: number | null = null;
+  let isPaused = false;
+  
+  function animate(time: number) {
+    if (isPaused) return;
+    
+    // Animation logic
+    
+    animationId = requestAnimationFrame(animate);
+  }
+  
+  animationId = requestAnimationFrame(animate);
+  
+  return {
+    pause: () => {
+      isPaused = true;
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    },
+    
+    resume: () => {
+      if (!isPaused) return;
+      isPaused = false;
+      animationId = requestAnimationFrame(animate);
+    },
+    
+    dispose: () => {
+      isPaused = true;
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+      }
+      // Additional cleanup
+    },
+  };
+};
+```
+
+### With Dynamic Options
+
+Toy that accepts runtime configuration updates:
+
+```typescript
+import type { ToyStartFunction, ToyInstance } from '../core/toy-interface';
+
+interface MyToyOptions {
+  speed?: number;
+  color?: string;
+  particleCount?: number;
+}
+
+export const start: ToyStartFunction = ({ container }): ToyInstance => {
+  let options: MyToyOptions = {
+    speed: 1,
+    color: '#ffffff',
+    particleCount: 100,
+  };
+  
+  function rebuildParticles() {
+    // Recreate particle system with new count
+  }
+  
+  function animate(time: number) {
+    // Use options.speed and options.color
+    requestAnimationFrame(animate);
+  }
+  
+  animate(0);
+  
+  return {
+    updateOptions: (newOptions: Record<string, unknown>) => {
+      const oldCount = options.particleCount;
+      options = { ...options, ...newOptions } as MyToyOptions;
+      
+      // Rebuild if particle count changed
+      if (options.particleCount !== oldCount) {
+        rebuildParticles();
+      }
+    },
+    
+    dispose: () => {
+      // Cleanup
+    },
+  };
+};
+```
+
+### Async Initialization
+
+Toy that loads assets before starting:
+
+```typescript
+import type { ToyStartFunction, ToyInstance } from '../core/toy-interface';
+
+export const start: ToyStartFunction = async ({ container }): Promise<ToyInstance> => {
+  // Load textures, models, or other assets
+  const texture = await loadTexture('/assets/texture.png');
+  const model = await loadModel('/assets/model.gltf');
+  
+  function animate(time: number) {
+    // Use loaded assets
+    requestAnimationFrame(animate);
+  }
+  
+  animate(0);
+  
+  return {
+    dispose: () => {
+      texture.dispose();
+      model.dispose();
+      // Additional cleanup
+    },
+  };
+};
+```
+
+## Using with Runtime Starters
+
+Most toys use `createToyRuntimeStarter` or `createAudioToyStarter` which handle the boilerplate:
+
+```typescript
+import { createToyRuntimeStarter } from '../utils/toy-runtime-starter';
+import type { ToyStartFunction } from '../core/toy-interface';
+
+export const start: ToyStartFunction = ({ container }) => {
+  let runtime: ToyRuntimeInstance;
+  
+  const startRuntime = createToyRuntimeStarter({
+    toyOptions: {
+      cameraOptions: { position: { z: 50 } },
+    },
+    audio: { fftSize: 256 },
+    plugins: [
+      {
+        name: 'my-toy',
+        setup: (runtimeInstance) => {
+          runtime = runtimeInstance;
+          // Initialize scene
+        },
+        update: ({ frequencyData, time }) => {
+          // Animation loop
+        },
+        dispose: () => {
+          // Cleanup
+        },
+      },
+    ],
+  });
+  
+  runtime = startRuntime({ container });
+  
+  return {
+    dispose: () => {
+      runtime.dispose();
+    },
+  };
+};
+```
+
+<Tip>
+The runtime starters automatically return a `ToyInstance` with proper `dispose` implementation, so you can return `runtime` directly or wrap it with additional cleanup logic.
+</Tip>
+
+## Type Safety Tips
+
+### Enforce Return Type
+
+Explicitly type your start function to catch return type errors:
+
+```typescript
+import type { ToyStartFunction } from '../core/toy-interface';
+
+// TypeScript will error if you forget to return dispose
+export const start: ToyStartFunction = ({ container }) => {
+  return {
+    dispose: () => {
+      // Required!
+    },
+  };
+};
+```
+
+### Custom Instance Extensions
+
+Extend `ToyInstance` for toy-specific methods:
+
+```typescript
+import type { ToyInstance } from '../core/toy-interface';
+
+interface MyToyInstance extends ToyInstance {
+  setMode(mode: 'burst' | 'bloom' | 'vortex'): void;
+  getCurrentMode(): string;
+}
+
+export const start = ({ container }): MyToyInstance => {
+  let currentMode = 'burst';
+  
+  return {
+    dispose: () => {},
+    setMode: (mode) => { currentMode = mode; },
+    getCurrentMode: () => currentMode,
+  };
+};
+```
+
+## Cleanup Best Practices
+
+<Warning>
+**Always implement `dispose` properly** to avoid memory leaks and dangling event listeners.
+</Warning>
+
+Common cleanup tasks:
+
+```typescript
+dispose: () => {
+  // 1. Stop animation loops
+  if (animationId) cancelAnimationFrame(animationId);
+  
+  // 2. Remove event listeners
+  window.removeEventListener('resize', handleResize);
+  canvas.removeEventListener('click', handleClick);
+  
+  // 3. Close audio context (if owned by toy)
+  audioContext?.close();
+  
+  // 4. Dispose Three.js resources
+  disposeGeometry(geometry);
+  disposeMaterial(material);
+  renderer?.dispose();
+  
+  // 5. Remove DOM elements
+  canvas?.remove();
+  
+  // 6. Clear references
+  runtime = null;
+  particles = null;
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Toy Development" icon="hammer" href="/development/toy-development">
+    Complete guide to building toys
+  </Card>
+  <Card title="Testing Toys" icon="flask" href="/development/testing-toys">
+    Write tests for toy lifecycle
+  </Card>
+  <Card title="Toy Lifecycle" icon="arrows-rotate" href="/architecture/toy-lifecycle">
+    Understand runtime behavior
+  </Card>
+  <Card title="Audio System" icon="waveform-lines" href="/architecture/audio-system">
+    Integrate audio reactivity
+  </Card>
+</CardGroup>

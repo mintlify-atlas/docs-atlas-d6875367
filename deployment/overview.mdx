@@ -1,0 +1,152 @@
+---
+title: Deployment Overview
+description: Build process, preview, and deployment options for Stims
+---
+
+This guide covers how to build the Stim Webtoys Library, validate the production bundle locally, and deploy it to production.
+
+## Build Process
+
+Stims uses Vite to build optimized production assets. The build process outputs to the `dist/` directory with hashed assets for efficient caching.
+
+### Production Build
+
+Build the site for production:
+
+```bash
+bun run build
+```
+
+The Vite build creates:
+- `dist/`: HTML entry points and hashed JS/CSS assets under `dist/assets/`
+- `dist/.vite/manifest.json`: Vite manifest mapping original sources to their output filenames
+
+<Info>
+The manifest file is required for asset lookups and debugging. Do not remove the `.vite` directory when deploying.
+</Info>
+
+### Reusing Existing Build
+
+If you already have a valid `dist/` folder (for example, when deploying prebuilt artifacts from CI), skip the rebuild:
+
+```bash
+bun run build -- --reuse
+```
+
+## Preview Locally
+
+Validate the production build before deploying using one of these preview methods:
+
+<CodeGroup>
+
+```bash Vite Preview Server
+bun run preview
+```
+
+```bash Bun Static Server
+bun run serve:dist
+```
+
+</CodeGroup>
+
+Both commands expect a fresh `bun run build` and serve from the `dist/` directory. The preview server binds to all interfaces and is accessible at `http://localhost:4173`.
+
+<Warning>
+Always run `bun run build` before previewing to ensure you're testing the latest production output.
+</Warning>
+
+## Pre-Deployment Checklist
+
+Run these quality checks before deploying to production:
+
+<Steps>
+
+<Step title="Run quality gate">
+Execute the full quality gate to catch issues:
+
+```bash
+bun run check
+```
+
+This runs Biome linting, TypeScript type checking, and tests.
+</Step>
+
+<Step title="Verify toy metadata">
+Confirm toy metadata and docs registration remain aligned:
+
+```bash
+bun run check:toys
+```
+</Step>
+
+<Step title="Build production assets">
+Generate optimized production assets:
+
+```bash
+bun run build
+```
+</Step>
+
+<Step title="Preview locally">
+Validate the build locally before deploying:
+
+```bash
+bun run preview
+```
+</Step>
+
+</Steps>
+
+<Info>
+If any step fails, fix the issue and restart from step 1 so downstream checks reflect the final state.
+</Info>
+
+## Multiple HTML Entry Points
+
+The project includes several standalone HTML entry points:
+- `index.html` - Main homepage
+- `toy.html` - Individual toy viewer
+- Additional toys in `toys/` directory (e.g., `legible.html`, `multi.html`, `symph.html`)
+
+### Validation Steps
+
+1. Run `bun run build` followed by `bun run preview`
+2. Manually open each entry point path (e.g., `http://localhost:4173/legible.html`)
+3. Test audio or interaction-specific features with at least one interaction test (mic input, pointer/touch)
+4. Repeat checks against preview URLs to ensure CDN caching and asset references work correctly
+
+## Deployment Options
+
+Stims supports multiple deployment targets:
+
+<CardGroup cols={2}>
+
+<Card title="Cloudflare Pages" icon="cloud" href="/deployment/cloudflare-pages">
+Recommended platform with automatic preview deployments and global CDN
+</Card>
+
+<Card title="Static Hosting" icon="server" href="/deployment/static-hosting">
+Any static host that can serve the dist/ directory
+</Card>
+
+</CardGroup>
+
+## Build Configuration
+
+The build is configured in `vite.config.js` with these key settings:
+
+- **Output directory**: `dist`
+- **Target**: ES2020
+- **Chunk size limit**: 550KB (increased for WebGPU renderer bundle)
+- **Manifest**: Enabled for asset resolution
+- **Entry preservation**: Strict signature preservation for dynamic imports
+
+### Dynamic Entry Detection
+
+Vite automatically discovers HTML entry points and module entries from `assets/data/toys.json`:
+
+- All `.html` files in the root and `toys/` directory
+- Module-type toys from the toys manifest
+- Dynamic imports with preserved `start` functions
+
+This ensures all toys and entry points are properly bundled and accessible in production.
