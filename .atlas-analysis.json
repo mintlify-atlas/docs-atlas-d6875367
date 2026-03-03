@@ -1,0 +1,103 @@
+{
+  "projectType": "frontend",
+  "projectName": "Stims",
+  "projectDescription": "Interactive audio-reactive web toys built with Three.js and WebGL for sensory-friendly play and neurodiverse exploration.",
+  "theme": "palm",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#A78BFA",
+  "darkColor": "#5B21B6",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "browser-support"
+            ]
+          },
+          {
+            "group": "Using Stims",
+            "pages": [
+              "guides/playing-toys",
+              "guides/audio-setup",
+              "guides/accessibility",
+              "guides/performance"
+            ]
+          },
+          {
+            "group": "Toy Catalog",
+            "pages": [
+              "toys/overview",
+              "toys/featured",
+              "toys/audio-visualizers",
+              "toys/interactive-tools",
+              "toys/webgpu-toys"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing/getting-started",
+              "contributing/development-setup",
+              "contributing/code-quality"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/toy-lifecycle",
+              "architecture/audio-system",
+              "architecture/rendering"
+            ]
+          },
+          {
+            "group": "Building Toys",
+            "pages": [
+              "development/toy-development",
+              "development/toy-interface",
+              "development/testing-toys",
+              "development/toy-manifest"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/overview",
+              "deployment/cloudflare-pages",
+              "deployment/static-hosting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "31 interactive audio-reactive toys",
+    "Three.js/WebGL and WebGPU rendering",
+    "Microphone, demo audio, and YouTube tab capture",
+    "Touch gestures and device motion support",
+    "Performance presets and accessibility controls",
+    "Searchable toy library with mood and tag filtering",
+    "Pooled renderer and audio services for fast toy switching"
+  ],
+  "publicApiSurface": [
+    "ToyStartFunction - Standard toy module export",
+    "ToyInstance - Toy lifecycle interface (dispose, pause, resume)",
+    "ToyStartOptions - Configuration for toy initialization",
+    "toys.json - Toy manifest with metadata",
+    "WebToy core classes - Scene, camera, lighting, and animation loop",
+    "Audio services - Microphone flow, audio analysis, and demo audio",
+    "Render services - WebGL/WebGPU renderer setup and pooling",
+    "Settings panel - Quality presets and performance controls"
+  ]
+}
